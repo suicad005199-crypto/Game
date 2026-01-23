@@ -3,273 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Seasons Pro - 策略大師</title>
+    <title>四季物語 - 全球版</title>
     <style>
         :root {
             --spring: #4CAF50; --summer: #FFD700; --autumn: #FF9800; --winter: #2196F3;
-            --bg: #1a1a1c; --panel: #2a2a2e;
+            --bg: #0f0f12; --panel: rgba(42, 42, 46, 0.95);
         }
-        body { font-family: 'Segoe UI', system-ui; background: var(--bg); color: white; margin: 0; padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom); overflow-x: hidden; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--bg); color: white; margin: 0; padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom); overflow: hidden; height: 100vh; }
         
-        /* 介面框架 */
-        .header { display: flex; justify-content: space-between; background: var(--panel); padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #444; }
-        .res-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
-        .res-item { background: #222; padding: 8px; border-radius: 8px; text-align: center; border: 2px solid transparent; transition: 0.3s; }
-        
-        /* 季節顯示 */
-        #season-display { text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* 動畫效果 */
+        @keyframes roll { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes shine { 0% { box-shadow: 0 0 5px #fff; } 50% { box-shadow: 0 0 20px #fff; } 100% { box-shadow: 0 0 5px #fff; } }
+        .rolling { animation: roll 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-        /* 卡牌區塊 */
-        .scroll-row { display: flex; overflow-x: auto; gap: 10px; padding: 5px; min-height: 100px; }
+        /* 頂部導航 */
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--panel); padding: 10px 15px; border-radius: 20px; border-bottom: 2px solid #444; margin-bottom: 10px; }
+        .crystal-box { font-size: 1.5rem; color: #4fc3f7; font-weight: bold; text-shadow: 0 0 10px rgba(79,195,247,0.5); }
+
+        /* 資源欄與季節 */
+        .res-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+        .res-item { background: #222; padding: 12px 5px; border-radius: 12px; text-align: center; border: 2px solid transparent; font-size: 1.1rem; position: relative; }
+        .active-rate { border-color: white; animation: shine 2s infinite; }
+
+        #season-wheel { 
+            text-align: center; padding: 12px; border-radius: 50px; font-weight: bold; 
+            margin-bottom: 15px; transition: 0.8s; border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* 骰子展示區 */
+        .dice-area { height: 80px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .dice-view { width: 60px; height: 60px; background: white; border-radius: 10px; color: #333; font-size: 2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        /* 卡牌管理 */
+        .section-label { font-size: 0.75rem; color: #888; margin-left: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .scroll-row { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; -webkit-overflow-scrolling: touch; }
         .card { 
-            min-width: 130px; background: #eee; color: #333; padding: 10px; border-radius: 10px; 
-            font-size: 0.8rem; position: relative; flex-shrink: 0; animation: fadeIn 0.4s;
+            min-width: 120px; height: 160px; background: linear-gradient(135deg, #fff, #ddd); color: #333; 
+            padding: 8px; border-radius: 12px; flex-shrink: 0; position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: 0.3s;
         }
-        .card.passive { border: 3px solid #9c27b0; } /* 被動技能卡標記 */
-        .card-img { font-size: 2rem; text-align: center; margin-bottom: 5px; }
+        .card.passive { border: 3px solid #9c27b0; }
+        .card b { font-size: 0.85rem; display: block; height: 2.5em; overflow: hidden; }
+        .card-cost { font-size: 0.7rem; color: #666; margin: 5px 0; }
         
-        /* 覆蓋層 (輪抽階段) */
-        #draft-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); 
-            z-index: 100; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;
+        /* 結算畫面 */
+        #end-screen { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; 
+            display: none; flex-direction: column; align-items: center; justify-content: center; padding: 30px;
         }
-        .draft-slots { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .slot { background: var(--panel); padding: 10px; border-radius: 8px; text-align: center; font-size: 0.8rem; min-height: 60px; border: 1px dashed #666; }
-        
-        /* 按鈕風格 */
-        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #444; color: white; }
-        .btn-main { background: linear-gradient(135deg, #e91e63, #9c27b0); }
-        .btn-sm { padding: 5px 10px; font-size: 0.7rem; margin-top: 5px; }
+        .score-row { display: flex; justify-content: space-between; width: 100%; margin: 10px 0; font-size: 1.2rem; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn { border: none; border-radius: 12px; font-weight: bold; color: white; transition: 0.2s; cursor: pointer; }
+        .btn-primary { background: linear-gradient(135deg, #e91e63, #9c27b0); width: 100%; padding: 15px; font-size: 1.1rem; }
+        .btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
-    <div id="draft-overlay">
-        <h2>🔮 命運分配</h2>
-        <p>將 9 張咒語牌分配至未來三年：</p>
-        <div class="draft-slots">
-            <div class="slot" id="slot-1">第 1 年<br>(已選: 0)</div>
-            <div class="slot" id="slot-2">第 2 年<br>(已選: 0)</div>
-            <div class="slot" id="slot-3">第 3 年<br>(已選: 0)</div>
+    <div class="header">
+        <div class="crystal-box">💎 <span id="crystal">0</span></div>
+        <div style="text-align: right;">
+            <div id="year-display" style="font-size: 0.8rem; color: #aaa;">YEAR 1 / 3</div>
+            <div id="summon-limit" style="font-weight: bold;">⭐ 0 / 1</div>
         </div>
-        <div class="scroll-row" id="draft-pool"></div>
-        <button class="btn btn-main" style="margin-top:20px;" onclick="startMainGame()">進入比賽</button>
     </div>
 
-    <div id="main-ui" style="display:none;">
-        <div class="header">
-            <div>💎 <span id="crystal">0</span></div>
-            <div style="text-align: right;">
-                <div id="year-display">第 1 / 3 年</div>
-                <div id="summon-limit">召喚: 0/1</div>
-            </div>
-        </div>
+    <div class="res-grid">
+        <div class="res-item" id="r-water" onclick="game.transmute('water')">💧 <span id="water">0</span></div>
+        <div class="res-item" id="r-fire" onclick="game.transmute('fire')">🔥 <span id="fire">0</span></div>
+        <div class="res-item" id="r-wind" onclick="game.transmute('wind')">🍃 <span id="wind">0</span></div>
+        <div class="res-item" id="r-earth" onclick="game.transmute('earth')">🪨 <span id="earth">0</span></div>
+    </div>
 
-        <div class="res-grid">
-            <div class="res-item" id="res-water" onclick="actionTransmute('water')">💧 <span id="water">0</span></div>
-            <div class="res-item" id="res-fire" onclick="actionTransmute('fire')">🔥 <span id="fire">0</span></div>
-            <div class="res-item" id="res-wind" onclick="actionTransmute('wind')">🍃 <span id="wind">0</span></div>
-            <div class="res-item" id="res-earth" onclick="actionTransmute('earth')">🪨 <span id="earth">0</span></div>
-        </div>
+    <div id="season-wheel">春季 (第 1 月)</div>
 
-        <div id="season-display">春季</div>
+    <div class="dice-area">
+        <div id="dice-result" class="dice-view">🎲</div>
+    </div>
 
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px; margin-bottom:15px;">
-            <button class="btn btn-main" onclick="actionRoll()">🎲 擲骰並前進</button>
-            <button class="btn" onclick="saveGame()">💾 儲存</button>
-        </div>
+    <button class="btn btn-primary" id="roll-btn" onclick="game.roll()">啟動命運之骰</button>
 
-        <div style="color:#aaa; font-size:0.8rem; margin:5px;">當前手牌 (第 <span id="hand-year">1</span> 年)</div>
-        <div class="scroll-row" id="hand-area"></div>
+    <div class="section-label" style="margin-top:15px;">咒語書 (當前手牌)</div>
+    <div class="scroll-row" id="hand-list"></div>
 
-        <div style="color:#aaa; font-size:0.8rem; margin:5px;">已召喚 (場上)</div>
-        <div class="scroll-row" id="field-area"></div>
+    <div class="section-label">魔法工坊 (已召喚)</div>
+    <div class="scroll-row" id="field-list"></div>
+
+    <div id="end-screen">
+        <h1 style="color: #FFD700;">競賽結束</h1>
+        <div class="score-row"><span>水晶資產</span><span id="s-crystal">0</span></div>
+        <div class="score-row"><span>卡牌勝分</span><span id="s-cards">0</span></div>
+        <div class="score-row" style="color:#ff5252;"><span>手牌懲罰</span><span id="s-pen">0</span></div>
+        <hr style="width:100%; border:1px solid #444;">
+        <div class="score-row" style="font-size: 2rem;"><span>總得分</span><span id="s-total">0</span></div>
+        <button class="btn btn-primary" style="margin-top:30px;" onclick="location.reload()">重新開局</button>
     </div>
 
 <script>
-    // --- 擴展卡牌資料 (增加 Trigger 屬性) ---
-    const cardLibrary = [
-        { id: 1, name: "水精靈", icon: "🧜‍♀️", cost: {water:1}, vp: 6, trigger: 'instant', effect: () => player.crystals += 5 },
-        { id: 2, name: "火之熔爐", icon: "⚒️", cost: {fire:2}, vp: 10, trigger: 'onTransmute', effect: () => player.crystals += 2 },
-        { id: 3, name: "大地巨人", icon: "🪨", cost: {earth:2}, vp: 15, trigger: 'instant', effect: () => player.summonMax += 1 },
-        { id: 4, name: "時光神僕", icon: "⏳", cost: {wind:1, water:1}, vp: 12, trigger: 'onYearStart', effect: () => player.crystals += 10 },
-        { id: 5, name: "風暴核心", icon: "🌪️", cost: {wind:2}, vp: 8, trigger: 'onTransmute', effect: () => player.wind += 1 }
-    ];
-
-    let player = {
+/**
+ * 核心引擎：Seasons Master Engine
+ * 實作規則：季節轉化、被動觸發、分年手牌、終局懲罰、LocalStorage
+ */
+const game = {
+    state: {
         year: 1, month: 0, crystals: 0,
         water: 0, fire: 0, earth: 0, wind: 0,
         summonMax: 1, currentSummon: 0,
-        hand: { y1: [], y2: [], y3: [] },
-        field: [],
-        isDrafting: true
-    };
+        hand: [[], [], []], // 0:Year1, 1:Year2, 2:Year3
+        field: []
+    },
 
-    const seasons = [
-        { name: '春季', color: 'var(--spring)', rate: {water:3, wind:2, fire:1, earth:1} },
-        { name: '夏季', color: 'var(--summer)', rate: {fire:3, earth:2, water:1, wind:1} },
-        { name: '秋季', color: 'var(--autumn)', rate: {wind:3, fire:2, water:1, earth:1} },
-        { name: '冬季', color: 'var(--winter)', rate: {earth:3, water:2, fire:1, wind:1} }
-    ];
+    cards: [
+        { id: 1, name: "海港水妖", icon: "🧜‍♀️", cost: {water:1}, vp: 6, type: 'instant', action: () => game.state.crystals += 6 },
+        { id: 2, name: "永恆熔爐", icon: "⚒️", cost: {fire:2}, vp: 8, type: 'passive', trigger: 'transmute', action: () => game.state.crystals += 2 },
+        { id: 3, name: "泰坦神像", icon: "🗿", cost: {earth:3}, vp: 25, type: 'instant', action: () => {} },
+        { id: 4, name: "時光祭司", icon: "⏳", cost: {wind:2}, vp: 10, type: 'passive', trigger: 'newMonth', action: () => game.state.crystals += 1 },
+        { id: 5, name: "大氣核心", icon: "🌀", cost: {wind:1, water:1}, vp: 12, type: 'instant', action: () => game.state.summonMax += 1 }
+    ],
 
-    // --- 輪抽階段邏輯 ---
-    function initDraft() {
-        const pool = document.getElementById('draft-pool');
-        // 隨機抽 9 張牌（此處為範例簡化）
-        for(let i=0; i<9; i++) {
-            const card = {...cardLibrary[Math.floor(Math.random()*cardLibrary.length)], tempId: i};
-            pool.innerHTML += `<div class="card" onclick="assignCard(${card.id}, this)">
-                <div class="card-img">${card.icon}</div>
-                <b>${card.name}</b><br>點擊分配
-            </div>`;
-        }
-    }
+    seasons: [
+        { name: '春季', color: 'var(--spring)', rates: {water:3, wind:2, fire:1, earth:1}, dice: ['💧', '💧', '🍃', '⭐', '💎'] },
+        { name: '夏季', color: 'var(--summer)', rates: {fire:3, earth:2, water:1, wind:1}, dice: ['🔥', '🔥', '🪨', '⭐', '💎'] },
+        { name: '秋季', color: 'var(--autumn)', rates: {wind:3, fire:2, water:1, earth:1}, dice: ['🍃', '🍃', '🔥', '⭐', '💎'] },
+        { name: '冬季', color: 'var(--winter)', rates: {earth:3, water:2, fire:1, wind:1}, dice: ['🪨', '🪨', '💧', '⭐', '💎'] }
+    ],
 
-    function assignCard(id, el) {
-        const card = cardLibrary.find(c => c.id === id);
-        if (player.hand.y1.length < 3) player.hand.y1.push(card);
-        else if (player.hand.y2.length < 3) player.hand.y2.push(card);
-        else if (player.hand.y3.length < 3) player.hand.y3.push(card);
-        else return alert("全部分配完了！");
-        
-        el.style.display = 'none';
-        updateDraftSlots();
-    }
-
-    function updateDraftSlots() {
-        document.getElementById('slot-1').innerHTML = `第 1 年<br>(已選: ${player.hand.y1.length})`;
-        document.getElementById('slot-2').innerHTML = `第 2 年<br>(已選: ${player.hand.y2.length})`;
-        document.getElementById('slot-3').innerHTML = `第 3 年<br>(已選: ${player.hand.y3.length})`;
-    }
-
-    function startMainGame() {
-        if (player.hand.y1.length + player.hand.y2.length + player.hand.y3.length < 9) {
-            return alert("請先分配完 9 張牌！");
-        }
-        player.isDrafting = false;
-        document.getElementById('draft-overlay').style.display = 'none';
-        document.getElementById('main-ui').style.display = 'block';
-        updateUI();
-    }
-
-    // --- 遊戲核心邏輯 ---
-    function triggerEffect(triggerName) {
-        player.field.forEach(card => {
-            if (card.trigger === triggerName) card.effect();
-        });
-    }
-
-    function actionTransmute(type) {
-        const sIdx = Math.floor(player.month / 3);
-        const rate = seasons[sIdx].rate[type];
-        if (player[type] > 0) {
-            player[type]--;
-            player.crystals += rate;
-            triggerEffect('onTransmute'); // 觸發被動
-            updateUI();
-        }
-    }
-
-    function actionRoll() {
-        // 簡化擲骰：隨機給資源
-        const res = ['water', 'fire', 'wind', 'earth'];
-        player[res[Math.floor(Math.random()*4)]] += 1;
-        player.crystals += 1;
-
-        player.month++;
-        if (player.month >= 12) {
-            player.month = 0;
-            player.year++;
-            triggerEffect('onYearStart');
-            if (player.year > 3) alert("遊戲結束！最終水晶: " + player.crystals);
-        }
-        updateUI();
-        autoSave();
-    }
-
-    function actionSummon(cardId, index) {
-        const currentHand = player.hand['y'+player.year];
-        const card = currentHand[index];
-
-        if (player.currentSummon >= player.summonMax) return alert("召喚上限不足！");
-        // 檢查費用 (略，邏輯同前)
-        
-        player.field.push(card);
-        currentHand.splice(index, 1);
-        player.currentSummon++;
-        if(card.trigger === 'instant') card.effect();
-        
-        updateUI();
-    }
-
-    // --- UI 渲染 ---
-    function updateUI() {
-        const sIdx = Math.floor(player.month / 3);
-        const s = seasons[sIdx];
-        
-        document.getElementById('season-display').innerText = `${s.name} (匯率最高: ${Object.keys(s.rate).reduce((a, b) => s.rate[a] > s.rate[b] ? a : b)})`;
-        document.getElementById('season-display').style.backgroundColor = s.color;
-        document.getElementById('year-display').innerText = `第 ${player.year} / 3 年`;
-        document.getElementById('crystal').innerText = player.crystals;
-        document.getElementById('summon-limit').innerText = `召喚: ${player.currentSummon}/${player.summonMax}`;
-        document.getElementById('hand-year').innerText = player.year;
-
-        ['water', 'fire', 'wind', 'earth'].forEach(t => {
-            document.getElementById(t).innerText = player[t];
-            document.getElementById('res-'+t).style.borderColor = s.rate[t] >= 3 ? 'white' : 'transparent';
-        });
-
-        renderLists();
-    }
-
-    function renderLists() {
-        const handArea = document.getElementById('hand-area');
-        const currentHand = player.hand['y'+player.year] || [];
-        handArea.innerHTML = currentHand.map((c, i) => `
-            <div class="card ${c.trigger !== 'instant' ? 'passive' : ''}">
-                <div class="card-img">${c.icon}</div>
-                <b>${c.name}</b><br>
-                <button class="btn btn-sm btn-main" onclick="actionSummon(${c.id}, ${i})">召喚</button>
-            </div>
-        `).join('');
-
-        const fieldArea = document.getElementById('field-area');
-        fieldArea.innerHTML = player.field.map(c => `
-            <div class="card on-field ${c.trigger !== 'instant' ? 'passive' : ''}">
-                <div class="card-img">${c.icon}</div>
-                <b>${c.name}</b>
-            </div>
-        `).join('');
-    }
-
-    // --- 儲存機制 ---
-    function saveGame() {
-        localStorage.setItem('seasons_pro_save', JSON.stringify(player));
-        alert("存檔成功！");
-    }
-
-    function autoSave() {
-        localStorage.setItem('seasons_pro_save', JSON.stringify(player));
-    }
-
-    function loadGame() {
-        const saved = localStorage.getItem('seasons_pro_save');
+    init() {
+        const saved = localStorage.getItem('seasons_99_save');
         if (saved) {
-            player = JSON.parse(saved);
-            if (!player.isDrafting) {
-                document.getElementById('draft-overlay').style.display = 'none';
-                document.getElementById('main-ui').style.display = 'block';
+            this.state = JSON.parse(saved);
+        } else {
+            // 初次進入：隨機分配 9 張牌
+            for(let y=0; y<3; y++) {
+                for(let i=0; i<3; i++) {
+                    const randomCard = this.cards[Math.floor(Math.random()*this.cards.length)];
+                    this.state.hand[y].push({...randomCard, uuid: Math.random()});
+                }
             }
-            updateUI();
         }
-    }
+        this.updateUI();
+    },
 
-    window.onload = () => {
-        initDraft();
-        loadGame();
-    };
+    updateUI() {
+        const sIdx = Math.floor(this.state.month / 3);
+        const s = this.seasons[sIdx];
+        
+        // 季節與標題
+        document.getElementById('season-wheel').innerText = `${s.name} (第 ${this.state.month + 1} 月)`;
+        document.getElementById('season-wheel').style.backgroundColor = s.color;
+        document.getElementById('year-display').innerText = `YEAR ${this.state.year} / 3`;
+        document.getElementById('crystal').innerText = this.state.crystals;
+        document.getElementById('summon-limit').innerText = `⭐ ${this.state.currentSummon} / ${this.state.summonMax}`;
+
+        // 資源匯率高亮
+        ['water', 'fire', 'wind', 'earth'].forEach(t => {
+            document.getElementById(t).innerText = this.state[t];
+            document.getElementById('r-'+t).classList.toggle('active-rate', s.rates[t] >= 3);
+        });
+
+        // 渲染列表
+        this.renderCards();
+        localStorage.setItem('seasons_99_save', JSON.stringify(this.state));
+    },
+
+    roll() {
+        const btn = document.getElementById('roll-btn');
+        const diceEl = document.getElementById('dice-result');
+        btn.disabled = true;
+        diceEl.classList.add('rolling');
+
+        setTimeout(() => {
+            const sIdx = Math.floor(this.state.month / 3);
+            const pool = this.seasons[sIdx].dice;
+            const res = pool[Math.floor(Math.random()*pool.length)];
+            
+            diceEl.innerText = res;
+            diceEl.classList.remove('rolling');
+
+            // 處理結果
+            if(res === '💧') this.state.water++;
+            if(res === '🔥') this.state.fire++;
+            if(res === '🍃') this.state.wind++;
+            if(res === '🪨') this.state.earth++;
+            if(res === '⭐') this.state.summonMax++;
+            if(res === '💎') this.state.crystals += 3;
+
+            this.state.month++;
+            if(this.state.month >= 12) {
+                this.state.month = 0;
+                this.state.year++;
+                if(this.state.year > 3) return this.endGame();
+            }
+            
+            this.triggerPassive('newMonth');
+            this.updateUI();
+            btn.disabled = false;
+        }, 600);
+    },
+
+    transmute(type) {
+        const sIdx = Math.floor(this.state.month / 3);
+        const rate = this.seasons[sIdx].rates[type];
+        if (this.state[type] > 0) {
+            this.state[type]--;
+            this.state.crystals += rate;
+            this.triggerPassive('transmute');
+            this.updateUI();
+        }
+    },
+
+    summon(uuid) {
+        const hand = this.state.hand[this.state.year-1];
+        const idx = hand.findIndex(c => c.uuid === uuid);
+        const card = hand[idx];
+
+        if(this.state.currentSummon >= this.state.summonMax) return alert("召喚上限不足！");
+        
+        // 檢查資源
+        for(let r in card.cost) {
+            if(this.state[r] < card.cost[r]) return alert("資源不足！");
+        }
+        
+        // 扣費與進場
+        for(let r in card.cost) this.state[r] -= card.cost[r];
+        this.state.currentSummon++;
+        this.state.field.push(card);
+        hand.splice(idx, 1);
+        
+        if(card.type === 'instant') card.action();
+        this.updateUI();
+    },
+
+    triggerPassive(type) {
+        this.state.field.forEach(c => {
+            if(c.type === 'passive' && c.trigger === type) c.action();
+        });
+    },
+
+    renderCards() {
+        const hList = document.getElementById('hand-list');
+        const fList = document.getElementById('field-list');
+        const currentHand = this.state.hand[this.state.year-1];
+
+        hList.innerHTML = currentHand.map(c => `
+            <div class="card ${c.type==='passive'?'passive':''}" onclick="game.summon(${c.uuid})">
+                <div style="font-size:1.5rem; text-align:center;">${c.icon}</div>
+                <b>${c.name}</b>
+                <div class="card-cost">成本: ${JSON.stringify(c.cost)}</div>
+                <div style="font-size:0.6rem; color:#9c27b0;">${c.type==='passive'?'被動效果':'入場即發'}</div>
+            </div>
+        `).join('');
+
+        fList.innerHTML = this.state.field.map(c => `
+            <div class="card on-field ${c.type==='passive'?'passive':''}">
+                <div style="font-size:1.5rem; text-align:center;">${c.icon}</div>
+                <b>${c.name}</b>
+                <div style="font-size:0.6rem; margin-top:10px; color:#2ecc71;">作用中</div>
+            </div>
+        `).join('');
+    },
+
+    endGame() {
+        const overlay = document.getElementById('end-screen');
+        const cScore = this.state.crystals;
+        const vScore = this.state.field.reduce((acc, c) => acc + c.vp, 0);
+        const pScore = (this.state.hand[0].length + this.state.hand[1].length + this.state.hand[2].length) * -5;
+
+        document.getElementById('s-crystal').innerText = cScore;
+        document.getElementById('s-cards').innerText = vScore;
+        document.getElementById('s-pen').innerText = pScore;
+        document.getElementById('s-total').innerText = cScore + vScore + pScore;
+
+        overlay.style.display = 'flex';
+        localStorage.removeItem('seasons_99_save');
+    }
+};
+
+window.onload = () => game.init();
 </script>
 </body>
 </html>
