@@ -1,40 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Mario Party Style - Dash</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mario Party Clicker</title>
     <style>
-        body { text-align: center; font-family: Arial; background: #e0e0e0; }
-        #track { width: 80%; height: 50px; background: #555; margin: 50px auto; position: relative; border: 4px solid #000; }
-        #player { width: 40px; height: 40px; background: red; position: absolute; left: 0; top: 5px; transition: 0.1s; }
-        .finish { position: absolute; right: 0; width: 10px; height: 100%; background: yellow; }
+        body { 
+            margin: 0; padding: 0; overflow: hidden; 
+            font-family: Arial, sans-serif; background: #f8d305; /* 瑪利歐黃 */
+            text-align: center; touch-action: manipulation;
+        }
+        #ui { padding-top: 50px; }
+        #score { font-size: 80px; font-weight: bold; color: #e52521; }
+        #timer { font-size: 24px; color: #333; }
+        #btn {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: #e52521; border: 8px solid #fff;
+            box-shadow: 0 10px 0 #a31a17; color: white;
+            font-size: 30px; font-weight: bold; margin: 40px auto;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        #btn:active { transform: translateY(5px); box-shadow: 0 5px 0 #a31a17; }
+        .reset { font-size: 18px; color: blue; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1>快速連打 SPACE 鍵！</h1>
-    <div id="track">
-        <div id="player"></div>
-        <div class="finish"></div>
+    <div id="ui">
+        <div id="timer">剩餘時間: <span id="time">10</span>s</div>
+        <div id="score">0</div>
+        <div id="btn">點我！</div>
+        <div id="msg"></div>
     </div>
-    <h2 id="msg">GO!</h2>
 
 <script>
-    let pos = 0;
-    const player = document.getElementById('player');
-    const msg = document.getElementById('msg');
-    const goal = 92; // 勝點百分比
+    let count = 0;
+    let timeLeft = 10;
+    let active = false;
+    let timerId = null;
 
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && pos < goal) {
-            pos += 2; // 每次按鍵前進距離
-            player.style.left = pos + '%';
-            
-            if (pos >= goal) {
-                msg.innerText = "FINISH! 🚩";
-                msg.style.color = "red";
-            }
+    const btn = document.getElementById('btn');
+    const scoreDisp = document.getElementById('score');
+    const timeDisp = document.getElementById('time');
+    const msgDisp = document.getElementById('msg');
+
+    // 處理點擊 (支援 iOS touch)
+    function handleClick(e) {
+        e.preventDefault(); // 防止 iOS 縮放或連點延遲
+        
+        if (timeLeft <= 0) return;
+
+        // 第一次點擊啟動計時
+        if (!active) {
+            active = true;
+            startTimer();
         }
-    });
+
+        count++;
+        scoreDisp.innerText = count;
+        
+        // 簡單的縮放效果
+        btn.style.transform = "scale(0.95)";
+        setTimeout(() => btn.style.transform = "scale(1)", 50);
+    }
+
+    function startTimer() {
+        timerId = setInterval(() => {
+            timeLeft--;
+            timeDisp.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerId);
+                endGame();
+            }
+        }, 1000);
+    }
+
+    function endGame() {
+        btn.style.backgroundColor = "#888";
+        msgDisp.innerHTML = `<h3>遊戲結束！</h3><p class="reset" onclick="location.reload()">重新挑戰</p>`;
+    }
+
+    // 綁定觸控與滑鼠事件
+    btn.addEventListener('touchstart', handleClick);
+    btn.addEventListener('mousedown', handleClick);
 </script>
 </body>
 </html>
