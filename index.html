@@ -1,255 +1,40 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一番賞究極版</title>
+    <title>Mario Party Style - Dash</title>
     <style>
-        :root {
-            --primary: #FF6B6B;
-            --secondary: #FFD93D;
-            --accent: #6BCB77;
-            --bg: #FFF9F0;
-            --card-bg: linear-gradient(145deg, #ff9245, #f37021);
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-        }
-
-        /* 主容器 */
-        .phone-frame {
-            width: 375px;
-            background: var(--card-bg);
-            border-radius: 40px;
-            padding: 30px 20px;
-            box-shadow: 0 20px 50px rgba(243, 112, 33, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* 標題區 */
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 20px;
-        }
-        .header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .header p { margin: 5px 0; font-size: 14px; opacity: 0.9; }
-
-        /* 扭蛋機核心 - 強化光澤感 */
-        .gacha-glass {
-            width: 250px;
-            height: 250px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(5px);
-            border: 8px solid rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            margin: 0 auto;
-            position: relative;
-            box-shadow: 
-                inset 0 10px 20px rgba(255,255,255,0.5),
-                0 15px 30px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        /* 扭蛋球樣式 */
-        .ball {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            position: absolute;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        /* 操作面板 */
-        .panel {
-            background: white;
-            border-radius: 30px;
-            padding: 25px 15px;
-            margin-top: -30px;
-            position: relative;
-            z-index: 2;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
-            text-align: center;
-        }
-
-        .draw-btn {
-            background: linear-gradient(180deg, #FFD93D 0%, #FF8A00 100%);
-            border: none;
-            width: 85%;
-            padding: 18px;
-            border-radius: 50px;
-            font-size: 22px;
-            font-weight: 800;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 8px 0 #D35400;
-            transition: 0.1s;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .draw-btn:active {
-            transform: translateY(6px);
-            box-shadow: 0 2px 0 #D35400;
-        }
-
-        .draw-btn:disabled {
-            filter: grayscale(0.8);
-            opacity: 0.7;
-        }
-
-        /* 獎品格位 */
-        .prize-row {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-        }
-        .prize-card {
-            background: #F8F9FA;
-            padding: 10px;
-            border-radius: 15px;
-            width: 60px;
-            font-size: 11px;
-            color: #555;
-            border: 1px solid #EEE;
-        }
-        .prize-card b { color: var(--primary); font-size: 14px; display: block; }
-
-        /* 結果彈窗 */
-        .modal-overlay {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 100;
-            backdrop-filter: blur(8px);
-        }
-        .result-modal {
-            display: none;
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; border-radius: 35px; padding: 40px;
-            width: 260px; text-align: center; z-index: 101;
-            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        @keyframes popIn { from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } }
-
-        .confirm-btn {
-            background: #333; color: white; border: none; padding: 12px 30px;
-            border-radius: 25px; margin-top: 20px; cursor: pointer;
-        }
+        body { text-align: center; font-family: Arial; background: #e0e0e0; }
+        #track { width: 80%; height: 50px; background: #555; margin: 50px auto; position: relative; border: 4px solid #000; }
+        #player { width: 40px; height: 40px; background: red; position: absolute; left: 0; top: 5px; transition: 0.1s; }
+        .finish { position: absolute; right: 0; width: 10px; height: 100%; background: yellow; }
     </style>
 </head>
 <body>
-
-<div class="phone-frame">
-    <div class="header">
-        <h1>一番賞大作戰</h1>
-        <p>100% 限定模型中獎機率</p>
+    <h1>快速連打 SPACE 鍵！</h1>
+    <div id="track">
+        <div id="player"></div>
+        <div class="finish"></div>
     </div>
-
-    <div class="gacha-glass" id="gachaContainer">
-        </div>
-
-    <div class="panel">
-        <button class="draw-btn" id="drawBtn" onclick="executeDraw()">立即抽獎</button>
-        <p style="color: #999; font-size: 12px; margin-top: 15px;">剩餘獎量：<span id="remain">40</span> / 40</p>
-        
-        <div class="prize-row">
-            <div class="prize-card"><b>A賞</b>模型</div>
-            <div class="prize-card"><b>B賞</b>抱枕</div>
-            <div class="prize-card"><b>C賞</b>掛飾</div>
-            <div class="prize-card"><b>D賞</b>卡片</div>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="overlay"></div>
-<div class="result-modal" id="modal">
-    <div id="res-rank" style="font-weight: bold; color: #FF6B6B; font-size: 18px;"></div>
-    <div id="res-name" style="font-size: 24px; font-weight: 900; margin: 15px 0; color: #333;"></div>
-    <button class="confirm-btn" onclick="closeModal()">收下獎勵</button>
-</div>
+    <h2 id="msg">GO!</h2>
 
 <script>
-    const prizes = [
-        { rank: 'A賞', name: '神級模型', count: 1, color: '#FF6B6B' },
-        { rank: 'B賞', name: '療癒抱枕', count: 5, color: '#4D96FF' },
-        { rank: 'C賞', name: '金屬掛飾', count: 14, color: '#FFD93D' },
-        { rank: 'D賞', name: '限定明信片', count: 20, color: '#6BCB77' }
-    ];
+    let pos = 0;
+    const player = document.getElementById('player');
+    const msg = document.getElementById('msg');
+    const goal = 92; // 勝點百分比
 
-    let pool = [];
-    prizes.forEach(p => { for(let i=0; i<p.count; i++) pool.push(p); });
-
-    const container = document.getElementById('gachaContainer');
-    const drawBtn = document.getElementById('drawBtn');
-
-    function initBalls() {
-        container.innerHTML = '';
-        for(let i=0; i<28; i++) {
-            const b = document.createElement('div');
-            b.className = 'ball';
-            b.style.backgroundColor = prizes[Math.floor(Math.random()*4)].color;
-            randomPos(b);
-            container.appendChild(b);
-        }
-    }
-
-    function randomPos(el) {
-        const x = Math.random() * 200;
-        const y = Math.random() * 200;
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
-        el.style.transform = `rotate(${Math.random() * 360}deg)`;
-    }
-
-    function executeDraw() {
-        if (pool.length === 0) return alert("已抽空！");
-        
-        drawBtn.disabled = true;
-        const balls = document.querySelectorAll('.ball');
-        
-        // 強化滾動視覺：連續隨機彈跳
-        let timer = 0;
-        const shake = setInterval(() => {
-            balls.forEach(b => randomPos(b));
-            timer++;
-            if (timer > 6) {
-                clearInterval(shake);
-                showResult();
-            }
-        }, 150);
-    }
-
-    function showResult() {
-        const idx = Math.floor(Math.random() * pool.length);
-        const win = pool.splice(idx, 1)[0];
-
-        setTimeout(() => {
-            document.getElementById('res-rank').innerText = win.rank;
-            document.getElementById('res-name').innerText = win.name;
-            document.getElementById('remain').innerText = pool.length;
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && pos < goal) {
+            pos += 2; // 每次按鍵前進距離
+            player.style.left = pos + '%';
             
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById('modal').style.display = 'block';
-        }, 300);
-    }
-
-    function closeModal() {
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('modal').style.display = 'none';
-        drawBtn.disabled = false;
-        initBalls();
-    }
-
-    initBalls();
+            if (pos >= goal) {
+                msg.innerText = "FINISH! 🚩";
+                msg.style.color = "red";
+            }
+        }
+    });
 </script>
-
 </body>
 </html>
