@@ -3,163 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Seasons Mini - HTML5</title>
+    <title>Seasons - 傳奇法師</title>
     <style>
         :root {
-            --spring: #4CAF50; --summer: #FFD700;
-            --autumn: #FF9800; --winter: #2196F3;
+            --spring: #4CAF50; --summer: #FFD700; --autumn: #FF9800; --winter: #2196F3;
+            --bg: #121212; --card-bg: #e0e0e0;
         }
-        body { font-family: sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 10px; overflow-x: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; user-select: none; }
         
-        /* 資源欄 */
-        .stats { display: flex; justify-content: space-around; background: #333; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; }
-        .energy { color: #ffeb3b; }
+        /* 動畫定義 */
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-pop { animation: pop 0.3s ease; }
 
-        /* 季節顯示 */
+        /* 頂部資訊 */
+        .header { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #444; }
+        .res-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-size: 0.8rem; }
+        .res-item { background: #222; padding: 5px; border-radius: 5px; text-align: center; border: 1px solid #555; }
+
+        /* 季節與進度 */
         #season-display { 
-            text-align: center; padding: 15px; border-radius: 12px; 
-            font-weight: bold; font-size: 1.2rem; margin-bottom: 10px;
-            transition: 0.5s; text-shadow: 1px 1px 2px #000;
+            text-align: center; padding: 20px; border-radius: 15px; font-weight: bold; font-size: 1.4rem; 
+            margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.8s;
         }
 
-        /* 動作區 */
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-roll { background: #e91e63; color: white; }
-        .btn-next { background: #555; color: white; }
+        /* 動作按鈕 */
+        .actions { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 20px; }
+        button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        .btn-roll { background: linear-gradient(135deg, #e91e63, #9c27b0); color: white; }
+        .btn-transmute { background: #607d8b; color: white; font-size: 0.8rem; }
 
-        /* 卡牌區 */
-        .card-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; }
+        /* 卡牌與場上區 */
+        .section-title { font-size: 0.9rem; margin: 10px 0 5px 5px; color: #aaa; border-left: 3px solid #e91e63; padding-left: 8px; }
+        .scroll-row { display: flex; overflow-x: auto; gap: 12px; padding: 5px; }
+        
         .card { 
-            min-width: 120px; background: #f0f0f0; color: #333; 
-            padding: 10px; border-radius: 8px; font-size: 0.8rem;
-            display: flex; flex-direction: column; justify-content: space-between;
+            min-width: 140px; height: 180px; background: var(--card-bg); color: #333; 
+            padding: 10px; border-radius: 12px; position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); animation: slideIn 0.4s ease;
         }
-        .card b { font-size: 0.9rem; color: #000; }
-        .card button { padding: 5px; margin-top: 5px; font-size: 0.7rem; background: #2ecc71; }
-
-        /* 日誌 */
-        #log { font-size: 0.75rem; color: #aaa; height: 60px; overflow-y: auto; border-top: 1px solid #444; padding-top: 5px; }
+        .card.on-field { background: #fffde7; border: 2px solid #ffd54f; }
+        .card-img { width: 100%; height: 60px; background: #bbb; border-radius: 5px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        
+        /* 結算畫面 */
+        #overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div class="stats">
-        <span>💎 <span id="crystal">0</span></span>
-        <span>⭐ <span id="summon-limit">0/1</span></span>
-        <span>💧<span id="water">0</span> 🔥<span id="fire">0</span> 🍃<span id="wind">0</span> 🪨<span id="earth">0</span></span>
+    <div class="header">
+        <div>💎 <span id="crystal" style="color: #4fc3f7; font-size: 1.2rem;">0</span></div>
+        <div style="text-align: right;">
+            <div id="year-display">第 1 / 3 年</div>
+            <div id="summon-limit">召喚: 0/1</div>
+        </div>
     </div>
 
-    <div id="season-display">春季 (第 1 月)</div>
+    <div class="res-grid">
+        <div class="res-item" onclick="transmute('water')">💧 <span id="water">0</span></div>
+        <div class="res-item" onclick="transmute('fire')">🔥 <span id="fire">0</span></div>
+        <div class="res-item" onclick="transmute('wind')">🍃 <span id="wind">0</span></div>
+        <div class="res-item" onclick="transmute('earth')">🪨 <span id="earth">0</span></div>
+    </div>
+    <div style="font-size: 0.7rem; text-align: center; color: #777; margin-top: 3px;">(點擊元素進行季節轉化)</div>
+
+    <div id="season-display">春季 (1月)</div>
 
     <div class="actions">
-        <button class="btn-roll" onclick="rollDice()">🎲 擲骰子</button>
-        <button class="btn-next" onclick="nextTurn()">⏳ 下個月</button>
+        <button class="btn-roll" onclick="rollDice()">🎲 擲骰子並前進</button>
+        <button class="btn-transmute" onclick="alert('點擊上方元素符號即可兌換水晶')">⚖️ 轉化說明</button>
     </div>
 
-    <h4 style="margin: 5px 0;">可召喚卡牌</h4>
-    <div class="card-container" id="card-market"></div>
+    <div class="section-title">已召喚 (場上)</div>
+    <div class="scroll-row" id="field-area"></div>
 
-    <h4 style="margin: 5px 0;">遊戲日誌</h4>
-    <div id="log">歡迎來到阿苟斯森林...</div>
+    <div class="section-title">可召喚卡牌</div>
+    <div class="scroll-row" id="card-market"></div>
+
+    <div id="overlay">
+        <h1>競賽結束</h1>
+        <p id="final-score">最終水晶: 0</p>
+        <button onclick="location.reload()" style="background: #e91e63; color: white;">重新開始</button>
+    </div>
 
 <script>
-    // --- 遊戲資料 ---
+    // --- 數據定義 ---
     const seasons = [
-        { name: '春季', color: 'var(--spring)', dice: [{w:1, f:0, e:0, wi:0, c:2}, {w:0, f:0, e:0, wi:1, c:3, s:1}] },
-        { name: '夏季', color: 'var(--summer)', dice: [{w:0, f:1, e:0, wi:0, c:5}, {w:0, f:0, e:1, wi:0, c:2, s:1}] },
-        { name: '秋季', color: 'var(--autumn)', dice: [{w:0, f:0, e:0, wi:1, c:4}, {w:0, f:1, e:0, wi:0, c:2, s:1}] },
-        { name: '冬季', color: 'var(--winter)', dice: [{w:0, f:0, e:1, wi:0, c:3}, {w:1, f:0, e:0, wi:0, c:1, s:1}] }
+        { name: '春季', color: 'var(--spring)', rate: {water:2, wind:2, fire:1, earth:1}, dice: [{w:1, c:1}, {wi:1, s:1}, {c:4}] },
+        { name: '夏季', color: 'var(--summer)', rate: {fire:3, earth:2, water:1, wind:1}, dice: [{f:1, c:2}, {e:1, s:1}, {c:6}] },
+        { name: '秋季', color: 'var(--autumn)', rate: {wind:3, fire:2, water:1, earth:1}, dice: [{wi:1, c:3}, {f:1, s:1}, {c:5}] },
+        { name: '冬季', color: 'var(--winter)', rate: {earth:3, water:2, fire:1, wind:1}, dice: [{e:1, c:4}, {w:1, s:1}, {c:4}] }
     ];
 
-    const cards = [
-        { id: 1, name: "水之精靈", cost: {water:1}, vp: 6, effect: () => { player.crystals += 4; } },
-        { id: 2, name: "大地巨人", cost: {earth:1, fire:1}, vp: 12, effect: () => { player.summonMax += 1; } },
-        { id: 3, name: "風之神僕", cost: {wind:2}, vp: 15, effect: () => { player.crystals += 10; } }
+    const cardLibrary = [
+        { id: 1, name: "水精靈", icon: "🧜‍♀️", cost: {water:1}, vp: 6, effect: () => player.crystals += 5 },
+        { id: 2, name: "火之儀式", icon: "🌋", cost: {fire:2}, vp: 12, effect: () => player.summonMax += 1 },
+        { id: 3, name: "大地之心", icon: "💎", cost: {earth:1, water:1}, vp: 20, effect: () => {} },
+        { id: 4, name: "風暴神僕", icon: "🦅", cost: {wind:2}, vp: 15, effect: () => player.crystals += 10 }
     ];
 
     // --- 玩家狀態 ---
     let player = {
-        month: 0,
-        crystals: 0,
+        year: 1, month: 0, crystals: 0,
         water: 0, fire: 0, earth: 0, wind: 0,
-        summonMax: 1,
-        currentSummon: 0
+        summonMax: 1, currentSummon: 0, field: []
     };
 
-    // --- 邏輯函數 ---
+    // --- 核心邏輯 ---
     function updateUI() {
         const sIdx = Math.floor(player.month / 3);
         const s = seasons[sIdx];
-        const display = document.getElementById('season-display');
-        display.innerText = `${s.name} (第 ${player.month + 1} 月)`;
-        display.style.backgroundColor = s.color;
+        
+        const sd = document.getElementById('season-display');
+        sd.innerText = `${s.name} (${player.month + 1}月)`;
+        sd.style.backgroundColor = s.color;
 
+        document.getElementById('year-display').innerText = `第 ${player.year} / 3 年`;
         document.getElementById('crystal').innerText = player.crystals;
-        document.getElementById('summon-limit').innerText = `${player.currentSummon}/${player.summonMax}`;
-        document.getElementById('water').innerText = player.water;
-        document.getElementById('fire').innerText = player.fire;
-        document.getElementById('earth').innerText = player.earth;
-        document.getElementById('wind').innerText = player.wind;
-    }
-
-    function log(msg) {
-        const logBox = document.getElementById('log');
-        logBox.innerHTML = `> ${msg}<br>${logBox.innerHTML}`;
+        document.getElementById('summon-limit').innerText = `召喚: ${player.currentSummon}/${player.summonMax}`;
+        
+        ['water', 'fire', 'wind', 'earth'].forEach(type => {
+            const el = document.getElementById(type);
+            el.innerText = player[type];
+            el.parentElement.style.borderColor = s.rate[type] >= 3 ? '#fff' : '#555'; // 高匯率亮起
+        });
     }
 
     function rollDice() {
         const sIdx = Math.floor(player.month / 3);
-        const pool = seasons[sIdx].dice;
-        const res = pool[Math.floor(Math.random() * pool.length)];
+        const dice = seasons[sIdx].dice;
+        const res = dice[Math.floor(Math.random() * dice.length)];
 
-        player.water += (res.w || 0);
-        player.fire += (res.f || 0);
-        player.earth += (res.e || 0);
-        player.wind += (res.wi || 0);
-        player.crystals += (res.c || 0);
+        // 獲得資源並加點視覺特效
+        if(res.w) player.water += res.w;
+        if(res.f) player.fire += res.f;
+        if(res.wi) player.wind += res.wi;
+        if(res.e) player.earth += res.e;
+        if(res.c) player.crystals += res.c;
         if(res.s) player.summonMax += res.s;
 
-        log(`獲得了 資源/水晶！`);
+        document.querySelector('.header').classList.add('animate-pop');
+        setTimeout(() => document.querySelector('.header').classList.remove('animate-pop'), 300);
+
+        // 時間推進
+        player.month++;
+        if (player.month >= 12) {
+            player.month = 0;
+            player.year++;
+            if (player.year > 3) return endGame();
+        }
         updateUI();
     }
 
-    function nextTurn() {
-        player.month = (player.month + 1) % 12;
-        log(`進入下個月...`);
-        updateUI();
+    function transmute(type) {
+        const sIdx = Math.floor(player.month / 3);
+        const rate = seasons[sIdx].rate[type];
+        if (player[type] > 0) {
+            player[type]--;
+            player.crystals += rate;
+            updateUI();
+        }
     }
 
-    function summon(cardId) {
-        const card = cards.find(c => c.id === cardId);
-        if (player.currentSummon >= player.summonMax) return log("召喚位不足！");
-
-        for (let res in card.cost) {
-            if (player[res] < card.cost[res]) return log(`缺少 ${res} 元素！`);
+    function summon(id) {
+        const card = cardLibrary.find(c => c.id === id);
+        if (player.currentSummon >= player.summonMax) return alert("召喚位不足！");
+        for (let r in card.cost) {
+            if (player[r] < card.cost[r]) return alert("資源不足！");
         }
 
-        // 扣除費用
-        for (let res in card.cost) player[res] -= card.cost[res];
-        
+        // 扣費
+        for (let r in card.cost) player[r] -= card.cost[r];
         player.currentSummon++;
+        player.field.push(card);
         card.effect();
-        log(`成功召喚 ${card.name}！`);
+        
+        renderField();
         updateUI();
     }
 
-    // 初始化市場
+    function renderField() {
+        const area = document.getElementById('field-area');
+        area.innerHTML = player.field.map(card => `
+            <div class="card on-field">
+                <div class="card-img">${card.icon}</div>
+                <b>${card.name}</b>
+                <div style="font-size:0.7rem; margin-top:5px;">已在場上</div>
+            </div>
+        `).join('');
+    }
+
     function initMarket() {
         const market = document.getElementById('card-market');
-        cards.forEach(card => {
-            const costText = Object.entries(card.cost).map(([k,v]) => `${v}${k}`).join(',');
-            market.innerHTML += `
-                <div class="card">
-                    <b>${card.name}</b>
-                    <span>消耗: ${costText}</span>
-                    <span>VP: ${card.vp}</span>
-                    <button onclick="summon(${card.id})">召喚</button>
-                </div>`;
-        });
+        market.innerHTML = cardLibrary.map(card => `
+            <div class="card">
+                <div class="card-img">${card.icon}</div>
+                <b>${card.name}</b>
+                <span style="font-size:0.7rem; color:#666;">價值: ${card.vp} VP</span>
+                <button onclick="summon(${card.id})" style="background:#2ecc71; color:white; font-size:0.7rem;">召喚</button>
+            </div>
+        `).join('');
+    }
+
+    function endGame() {
+        let totalVP = player.crystals;
+        player.field.forEach(c => totalVP += c.vp);
+        document.getElementById('final-score').innerText = `最終勝分 (水晶+卡牌): ${totalVP}`;
+        document.getElementById('overlay').style.display = 'flex';
     }
 
     initMarket();
