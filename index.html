@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seasons Mini Lite</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #222; color: white; margin: 0; }
+        #game-container { padding: 20px; }
+        .season-wheel { width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem; transition: background 0.5s; }
+        .spring { background: #4CAF50; } .summer { background: #FFEB3B; color: #333; }
+        .autumn { background: #FF9800; } .winter { background: #2196F3; }
+        .resource-bar { display: flex; justify-content: space-around; background: #333; padding: 10px; }
+        button { padding: 15px 30px; font-size: 1rem; cursor: pointer; border-radius: 8px; border: none; background: #e91e63; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="resource-bar">
+        <span>水晶: <b id="crystal">0</b></span>
+        <span>月分: <b id="month-display">1</b>/12</span>
+    </div>
+
+    <div id="wheel" class="season-wheel spring">春季</div>
+
+    <p>當前元素價值：<span id="rate">--</span></p>
+    <button onclick="nextMonth()">下一回合 (前進 1 個月)</button>
+</div>
+
+<script>
+    let month = 0; // 0-11
+    let crystals = 0;
+
+    const seasons = [
+        { name: '春季', class: 'spring', rate: '水=1, 風=1' },
+        { name: '夏季', class: 'summer', rate: '火=1, 土=1' },
+        { name: '秋季', class: 'autumn', rate: '風=1, 火=1' },
+        { name: '冬季', class: 'winter', rate: '土=1, 水=1' }
+    ];
+
+    function nextMonth() {
+        month = (month + 1) % 12;
+        updateUI();
+    }
+
+    function updateUI() {
+        const seasonIndex = Math.floor(month / 3);
+        const s = seasons[seasonIndex];
+        
+        const wheel = document.getElementById('wheel');
+        wheel.innerText = s.name;
+        wheel.className = 'season-wheel ' + s.class;
+        
+        document.getElementById('month-display').innerText = month + 1;
+        document.getElementById('rate').innerText = s.rate;
+    }
+
+    updateUI();
+</script>
+</body>
+</html>
