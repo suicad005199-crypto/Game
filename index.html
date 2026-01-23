@@ -1,60 +1,168 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Seasons Mini Lite</title>
+    <title>Seasons Mini - HTML5</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #222; color: white; margin: 0; }
-        #game-container { padding: 20px; }
-        .season-wheel { width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem; transition: background 0.5s; }
-        .spring { background: #4CAF50; } .summer { background: #FFEB3B; color: #333; }
-        .autumn { background: #FF9800; } .winter { background: #2196F3; }
-        .resource-bar { display: flex; justify-content: space-around; background: #333; padding: 10px; }
-        button { padding: 15px 30px; font-size: 1rem; cursor: pointer; border-radius: 8px; border: none; background: #e91e63; color: white; }
+        :root {
+            --spring: #4CAF50; --summer: #FFD700;
+            --autumn: #FF9800; --winter: #2196F3;
+        }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; margin: 0; padding: 10px; overflow-x: hidden; }
+        
+        /* 資源欄 */
+        .stats { display: flex; justify-content: space-around; background: #333; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem; }
+        .energy { color: #ffeb3b; }
+
+        /* 季節顯示 */
+        #season-display { 
+            text-align: center; padding: 15px; border-radius: 12px; 
+            font-weight: bold; font-size: 1.2rem; margin-bottom: 10px;
+            transition: 0.5s; text-shadow: 1px 1px 2px #000;
+        }
+
+        /* 動作區 */
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-roll { background: #e91e63; color: white; }
+        .btn-next { background: #555; color: white; }
+
+        /* 卡牌區 */
+        .card-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; }
+        .card { 
+            min-width: 120px; background: #f0f0f0; color: #333; 
+            padding: 10px; border-radius: 8px; font-size: 0.8rem;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .card b { font-size: 0.9rem; color: #000; }
+        .card button { padding: 5px; margin-top: 5px; font-size: 0.7rem; background: #2ecc71; }
+
+        /* 日誌 */
+        #log { font-size: 0.75rem; color: #aaa; height: 60px; overflow-y: auto; border-top: 1px solid #444; padding-top: 5px; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="resource-bar">
-        <span>水晶: <b id="crystal">0</b></span>
-        <span>月分: <b id="month-display">1</b>/12</span>
+    <div class="stats">
+        <span>💎 <span id="crystal">0</span></span>
+        <span>⭐ <span id="summon-limit">0/1</span></span>
+        <span>💧<span id="water">0</span> 🔥<span id="fire">0</span> 🍃<span id="wind">0</span> 🪨<span id="earth">0</span></span>
     </div>
 
-    <div id="wheel" class="season-wheel spring">春季</div>
+    <div id="season-display">春季 (第 1 月)</div>
 
-    <p>當前元素價值：<span id="rate">--</span></p>
-    <button onclick="nextMonth()">下一回合 (前進 1 個月)</button>
-</div>
+    <div class="actions">
+        <button class="btn-roll" onclick="rollDice()">🎲 擲骰子</button>
+        <button class="btn-next" onclick="nextTurn()">⏳ 下個月</button>
+    </div>
+
+    <h4 style="margin: 5px 0;">可召喚卡牌</h4>
+    <div class="card-container" id="card-market"></div>
+
+    <h4 style="margin: 5px 0;">遊戲日誌</h4>
+    <div id="log">歡迎來到阿苟斯森林...</div>
 
 <script>
-    let month = 0; // 0-11
-    let crystals = 0;
-
+    // --- 遊戲資料 ---
     const seasons = [
-        { name: '春季', class: 'spring', rate: '水=1, 風=1' },
-        { name: '夏季', class: 'summer', rate: '火=1, 土=1' },
-        { name: '秋季', class: 'autumn', rate: '風=1, 火=1' },
-        { name: '冬季', class: 'winter', rate: '土=1, 水=1' }
+        { name: '春季', color: 'var(--spring)', dice: [{w:1, f:0, e:0, wi:0, c:2}, {w:0, f:0, e:0, wi:1, c:3, s:1}] },
+        { name: '夏季', color: 'var(--summer)', dice: [{w:0, f:1, e:0, wi:0, c:5}, {w:0, f:0, e:1, wi:0, c:2, s:1}] },
+        { name: '秋季', color: 'var(--autumn)', dice: [{w:0, f:0, e:0, wi:1, c:4}, {w:0, f:1, e:0, wi:0, c:2, s:1}] },
+        { name: '冬季', color: 'var(--winter)', dice: [{w:0, f:0, e:1, wi:0, c:3}, {w:1, f:0, e:0, wi:0, c:1, s:1}] }
     ];
 
-    function nextMonth() {
-        month = (month + 1) % 12;
+    const cards = [
+        { id: 1, name: "水之精靈", cost: {water:1}, vp: 6, effect: () => { player.crystals += 4; } },
+        { id: 2, name: "大地巨人", cost: {earth:1, fire:1}, vp: 12, effect: () => { player.summonMax += 1; } },
+        { id: 3, name: "風之神僕", cost: {wind:2}, vp: 15, effect: () => { player.crystals += 10; } }
+    ];
+
+    // --- 玩家狀態 ---
+    let player = {
+        month: 0,
+        crystals: 0,
+        water: 0, fire: 0, earth: 0, wind: 0,
+        summonMax: 1,
+        currentSummon: 0
+    };
+
+    // --- 邏輯函數 ---
+    function updateUI() {
+        const sIdx = Math.floor(player.month / 3);
+        const s = seasons[sIdx];
+        const display = document.getElementById('season-display');
+        display.innerText = `${s.name} (第 ${player.month + 1} 月)`;
+        display.style.backgroundColor = s.color;
+
+        document.getElementById('crystal').innerText = player.crystals;
+        document.getElementById('summon-limit').innerText = `${player.currentSummon}/${player.summonMax}`;
+        document.getElementById('water').innerText = player.water;
+        document.getElementById('fire').innerText = player.fire;
+        document.getElementById('earth').innerText = player.earth;
+        document.getElementById('wind').innerText = player.wind;
+    }
+
+    function log(msg) {
+        const logBox = document.getElementById('log');
+        logBox.innerHTML = `> ${msg}<br>${logBox.innerHTML}`;
+    }
+
+    function rollDice() {
+        const sIdx = Math.floor(player.month / 3);
+        const pool = seasons[sIdx].dice;
+        const res = pool[Math.floor(Math.random() * pool.length)];
+
+        player.water += (res.w || 0);
+        player.fire += (res.f || 0);
+        player.earth += (res.e || 0);
+        player.wind += (res.wi || 0);
+        player.crystals += (res.c || 0);
+        if(res.s) player.summonMax += res.s;
+
+        log(`獲得了 資源/水晶！`);
         updateUI();
     }
 
-    function updateUI() {
-        const seasonIndex = Math.floor(month / 3);
-        const s = seasons[seasonIndex];
-        
-        const wheel = document.getElementById('wheel');
-        wheel.innerText = s.name;
-        wheel.className = 'season-wheel ' + s.class;
-        
-        document.getElementById('month-display').innerText = month + 1;
-        document.getElementById('rate').innerText = s.rate;
+    function nextTurn() {
+        player.month = (player.month + 1) % 12;
+        log(`進入下個月...`);
+        updateUI();
     }
 
+    function summon(cardId) {
+        const card = cards.find(c => c.id === cardId);
+        if (player.currentSummon >= player.summonMax) return log("召喚位不足！");
+
+        for (let res in card.cost) {
+            if (player[res] < card.cost[res]) return log(`缺少 ${res} 元素！`);
+        }
+
+        // 扣除費用
+        for (let res in card.cost) player[res] -= card.cost[res];
+        
+        player.currentSummon++;
+        card.effect();
+        log(`成功召喚 ${card.name}！`);
+        updateUI();
+    }
+
+    // 初始化市場
+    function initMarket() {
+        const market = document.getElementById('card-market');
+        cards.forEach(card => {
+            const costText = Object.entries(card.cost).map(([k,v]) => `${v}${k}`).join(',');
+            market.innerHTML += `
+                <div class="card">
+                    <b>${card.name}</b>
+                    <span>消耗: ${costText}</span>
+                    <span>VP: ${card.vp}</span>
+                    <button onclick="summon(${card.id})">召喚</button>
+                </div>`;
+        });
+    }
+
+    initMarket();
     updateUI();
 </script>
 </body>
