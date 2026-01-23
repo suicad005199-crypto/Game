@@ -1,58 +1,212 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扭蛋大作戰 - 一番賞系統</title>
+    <style>
+        :root {
+            --primary-orange: #ff9d33;
+            --bg-yellow: #ffdf7e;
+            --button-red: #ff5e3a;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-yellow);
+            font-family: "Microsoft JhengHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 360px;
+            background: linear-gradient(180deg, #ffc145 0%, #ff8e42 100%);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        h1 { font-size: 28px; margin-bottom: 5px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .subtitle { font-size: 14px; background: rgba(255,255,255,0.3); border-radius: 15px; padding: 5px 10px; display: inline-block; }
+
+        /* 扭蛋機主體 */
+        .gacha-machine {
+            width: 220px;
+            height: 220px;
+            background: rgba(255,255,255,0.5);
+            border: 8px solid white;
+            border-radius: 50%;
+            margin: 30px auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* 模擬扭蛋球 */
+        .ball {
+            width: 40px; height: 40px; border-radius: 50%; position: absolute;
+            transition: transform 0.1s;
+        }
+
+        /* 控制區域 */
+        .control-panel {
+            background: #fff4e0;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .draw-btn {
+            background: linear-gradient(to bottom, #ffe877, #ffbb00);
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #d35400;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #e67e22;
+            width: 80%;
+        }
+
+        .draw-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #e67e22; }
+
+        /* 獎品清單 */
+        .prize-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .prize-item {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 5px;
+            font-size: 10px;
+        }
+
+        .prize-item img { width: 100%; border-radius: 5px; }
+
+        /* 中獎彈窗 */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            z-index: 100;
+            text-align: center;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 99;
+        }
+    </style>
 </head>
 <body>
-    <div id="multiplayer-ui" style="background:#444; padding:10px; border-radius:10px; margin-bottom:10px;">
-        <input type="text" id="room-input" placeholder="輸入房間號碼" style="padding:5px; border-radius:5px;">
-        <button onclick="connectRoom()">進入房間</button>
-        <span id="status" style="font-size:0.7rem; color: #ffeb3b;">🔴 未連線</span>
+
+<div class="container">
+    <h1>扭蛋大作戰 2.0</h1>
+    <div class="subtitle">一番賞：100% 中獎率！</div>
+
+    <div class="gacha-machine" id="machine">
+        </div>
+
+    <div class="control-panel">
+        <button class="draw-btn" onclick="draw()">NT$ 50 抽一次</button>
+        <div style="color: #666; font-size: 12px; margin-top: 10px;">目前剩餘數量：<span id="remain">40</span></div>
     </div>
 
-    <script>
-    // 1. Firebase 配置 (請到 Firebase 控制台免費申請後替換此處)
-    const firebaseConfig = {
-        databaseURL: "https://你的專案名稱-default-rtdb.firebaseio.com/"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <div class="prize-list">
+        <div class="prize-item"><div>A賞</div>模型</div>
+        <div class="prize-item"><div>B賞</div>抱枕</div>
+        <div class="prize-item"><div>C賞</div>吊飾</div>
+        <div class="prize-item"><div>D賞</div>貼紙</div>
+    </div>
+</div>
 
-    let currentRoom = null;
+<div class="overlay" id="overlay"></div>
+<div id="modal">
+    <h2 style="color: #ff5e3a;">恭喜中獎！</h2>
+    <div id="result-text" style="font-size: 24px; font-weight: bold;"></div>
+    <button onclick="closeModal()" style="margin-top:20px; padding:10px 20px;">確認</button>
+</div>
 
-    // 2. 連線房間邏輯
-    function connectRoom() {
-        const id = document.getElementById('room-input').value;
-        if (!id) return alert("請輸入房間號");
-        
-        currentRoom = id;
-        document.getElementById('status').innerText = "🟢 已連線: " + id;
+<script>
+    // 獎池設定
+    const prizes = [
+        { name: "A賞：限量模型", weight: 1 },
+        { name: "B賞：柔軟抱枕", weight: 5 },
+        { name: "C賞：造型吊飾", weight: 14 },
+        { name: "D賞：精美貼紙", weight: 20 }
+    ];
 
-        // 監聽雲端數據：當任何一方修改數據，雙方都會觸發此處的 UI 更新
-        db.ref('rooms/' + currentRoom).on('value', (snapshot) => {
-            const remoteState = snapshot.val();
-            if (remoteState) {
-                game.state = remoteState; // 更新本地數據
-                game.updateUI(false);    // 僅更新 UI，不重複上傳
-            }
-        });
+    let pool = [];
+    prizes.forEach(p => {
+        for(let i=0; i<p.weight; i++) pool.push(p.name);
+    });
+
+    // 初始化扭蛋機裡的球
+    const machine = document.getElementById('machine');
+    const colors = ['#ff4d4d', '#4dabff', '#ffec3d', '#73d13d', '#ff7875'];
+    
+    function initBalls() {
+        machine.innerHTML = '';
+        for(let i=0; i<25; i++) {
+            const ball = document.createElement('div');
+            ball.className = 'ball';
+            ball.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+            ball.style.left = Math.random() * 180 + 'px';
+            ball.style.top = Math.random() * 180 + 'px';
+            machine.appendChild(ball);
+        }
     }
 
-    // 3. 修改 game 對象，讓它具備同步能力
-    const originalUpdateUI = game.updateUI;
-    game.updateUI = function(shouldSync = true) {
-        // 執行原始 UI 更新
-        originalUpdateUI.call(game);
+    initBalls();
 
-        // 如果需要同步且已連線房間，將新數據推送到雲端
-        if (shouldSync && currentRoom) {
-            db.ref('rooms/' + currentRoom).set(this.state);
-        }
-    };
+    function draw() {
+        if (pool.length === 0) return alert("獎池已抽空！");
 
-    // 4. 修改所有動作 (Roll, Transmute, Summon)
-    // 確保它們在呼叫 updateUI 時會觸發同步
+        // 震動動畫
+        const balls = document.querySelectorAll('.ball');
+        balls.forEach(b => {
+            b.style.transform = `translate(${Math.random()*20-10}px, ${Math.random()*20-10}px)`;
+        });
+
+        setTimeout(() => {
+            const index = Math.floor(Math.random() * pool.length);
+            const win = pool.splice(index, 1)[0];
+            
+            document.getElementById('result-text').innerText = win;
+            document.getElementById('remain').innerText = pool.length;
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('modal').style.display = 'block';
+            
+            // 重置球的位置
+            balls.forEach(b => b.style.transform = 'translate(0,0)');
+        }, 500);
+    }
+
+    function closeModal() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('modal').style.display = 'none';
+    }
 </script>
+
 </body>
 </html>
