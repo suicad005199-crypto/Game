@@ -3,155 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一番賞扭蛋系統 Pro</title>
+    <title>一番賞扭蛋系統 2.0</title>
     <style>
-        :root { --main: #ff9d33; --accent: #ff5e3a; }
-        body { margin: 0; background: #fdf2d5; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; }
+        :root { --primary: #ff9d33; --bg: #ffdf7e; }
+        body { margin: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; }
         
-        .card { width: 350px; background: linear-gradient(180deg, #ffc145, #ff8e42); border-radius: 30px; padding: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); text-align: center; overflow: hidden; }
-        
-        /* 扭蛋機容器 */
-        .machine-container {
-            width: 240px; height: 240px; background: rgba(255,255,255,0.4); 
-            border: 6px solid #fff; border-radius: 50%; margin: 20px auto;
-            position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+        .container {
+            width: 360px; background: linear-gradient(180deg, #ffc145 0%, #ff8e42 100%);
+            border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center; color: white;
         }
 
-        /* 扭蛋球樣式 */
+        /* 扭蛋容器：球只在這裡面動 */
+        .gacha-main {
+            width: 220px; height: 220px; background: rgba(255,255,255,0.5);
+            border: 8px solid white; border-radius: 50%; margin: 30px auto;
+            position: relative; overflow: hidden;
+        }
+
         .ball {
-            width: 35px; height: 35px; border-radius: 50%; position: absolute;
-            border: 2px solid rgba(255,255,255,0.5);
-            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.1);
+            width: 38px; height: 38px; border-radius: 50%; position: absolute;
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.15);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* 動畫效果 */
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0) rotate(0); }
-            20% { transform: translate(-10px, 10px) rotate(-10deg); }
-            40% { transform: translate(10px, -15px) rotate(15deg); }
-            60% { transform: translate(-10px, -10px) rotate(-5deg); }
-            80% { transform: translate(15px, 10px) rotate(20deg); }
+        /* 控制面板 */
+        .control-panel { background: #fff4e0; border-radius: 20px; padding: 20px; margin-top: 20px; }
+        
+        .draw-btn {
+            background: linear-gradient(to bottom, #ffe877, #ffbb00);
+            border: none; padding: 15px 40px; border-radius: 30px;
+            font-size: 20px; font-weight: bold; color: #d35400;
+            cursor: pointer; box-shadow: 0 4px 0 #e67e22; width: 80%;
         }
-        .shaking .ball { animation: shake 0.5s infinite ease-in-out; }
+        .draw-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #e67e22; }
+        .draw-btn:disabled { filter: grayscale(1); cursor: wait; }
 
-        /* 出球動畫 */
-        #exit-slot { width: 60px; height: 20px; background: #884d00; margin: -10px auto 20px; border-radius: 0 0 10px 10px; }
-        .dropped-ball {
-            width: 40px; height: 40px; border-radius: 50%; background: #fff;
-            margin: 0 auto; position: absolute; left: 50%; transform: translateX(-50%);
-            top: 280px; display: none; z-index: 10;
-        }
-        @keyframes dropBall {
-            0% { top: 250px; opacity: 0; transform: translateX(-50%) scale(0.5); }
-            50% { top: 300px; opacity: 1; transform: translateX(-50%) scale(1.2); }
-            100% { top: 320px; opacity: 1; transform: translateX(-50%) scale(1); }
-        }
-
-        .btn {
-            background: #fff200; border: none; padding: 15px 50px; border-radius: 50px;
-            font-size: 20px; font-weight: bold; color: #d35400; cursor: pointer;
-            box-shadow: 0 5px 0 #d38e00; transition: 0.1s;
-        }
-        .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #d38e00; }
-        .btn:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+        /* 獎品清單 */
+        .prize-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+        .prize-item { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 8px 2px; font-size: 11px; }
 
         /* 彈窗 */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: white; padding: 30px; border-radius: 20px; z-index: 100; text-align: center; width: 200px; }
-        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:90; }
+        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9; }
+        .result-box {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; color: #333; padding: 30px; border-radius: 20px; z-index: 10; text-align: center; width: 220px;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="color: white; margin: 0;">一番賞大作戰</h2>
-    <div class="machine-container" id="machine"></div>
-    <div id="exit-slot"></div>
-    <div class="dropped-ball" id="dropped-ball"></div>
-    
-    <button class="btn" id="drawBtn" onclick="playGacha()">抽一個！</button>
-    <p style="color: white; font-size: 13px;">剩下 <span id="count">40</span> 抽</p>
+<div class="container">
+    <h1 style="margin:0">扭蛋大作戰 2.0</h1>
+    <div style="font-size:12px; opacity:0.8">100% 中獎，模型一番賞</div>
+
+    <div class="gacha-main" id="ball-container">
+        </div>
+
+    <div class="control-panel">
+        <button class="draw-btn" id="drawBtn" onclick="startDraw()">NT$ 50 抽一次</button>
+        <div style="color: #666; font-size: 12px; margin-top: 10px;">目前剩餘：<span id="remain">40</span> 抽</div>
+    </div>
+
+    <div class="prize-grid">
+        <div class="prize-item"><b>A賞</b><br>模型</div>
+        <div class="prize-item"><b>B賞</b><br>抱枕</div>
+        <div class="prize-item"><b>C賞</b><br>掛件</div>
+        <div class="prize-item"><b>D賞</b><br>貼紙</div>
+    </div>
 </div>
 
 <div class="overlay" id="overlay"></div>
-<div class="modal" id="modal">
-    <div id="res-rank" style="font-size: 14px; color: #888;"></div>
-    <div id="res-name" style="font-size: 22px; font-weight: bold; margin: 10px 0;"></div>
-    <button onclick="closeModal()">收下獎勵</button>
+<div class="result-box" id="resultBox">
+    <div id="res-rank" style="color: #ff5e3a; font-size: 14px;"></div>
+    <div id="res-name" style="font-size: 20px; font-weight: bold; margin: 10px 0;"></div>
+    <button onclick="closeResult()" style="padding: 8px 20px; cursor:pointer">確定</button>
 </div>
 
 <script>
-    const config = [
-        { rank: 'A賞', name: '模型：戰鬥型態', count: 1, color: '#ff4d4d' },
-        { rank: 'B賞', name: '大抱枕', count: 5, color: '#4dabff' },
-        { rank: 'C賞', name: '壓克力吊飾', count: 14, color: '#ffec3d' },
-        { rank: 'D賞', name: '紀念貼紙', count: 20, color: '#73d13d' }
+    const prizes = [
+        { rank: 'A賞', name: '限量戰鬥模型', count: 1, color: '#ff4d4d' },
+        { rank: 'B賞', name: '精美靠枕', count: 5, color: '#4dabff' },
+        { rank: 'C賞', name: '角色壓克力掛件', count: 14, color: '#ffec3d' },
+        { rank: 'D賞', name: '收藏版貼紙', count: 20, color: '#73d13d' }
     ];
 
     let pool = [];
-    config.forEach(p => { for(let i=0; i<p.count; i++) pool.push(p); });
+    prizes.forEach(p => { for(let i=0; i<p.count; i++) pool.push(p); });
 
-    const machine = document.getElementById('machine');
+    const container = document.getElementById('ball-container');
     const drawBtn = document.getElementById('drawBtn');
 
-    function init() {
-        machine.innerHTML = '';
-        for(let i=0; i<20; i++) {
+    // 初始化球體
+    function initBalls() {
+        container.innerHTML = '';
+        for(let i=0; i<25; i++) {
             const b = document.createElement('div');
             b.className = 'ball';
-            b.style.left = Math.random() * 80 + '%';
-            b.style.top = Math.random() * 80 + '%';
-            b.style.backgroundColor = config[Math.floor(Math.random()*4)].color;
-            machine.appendChild(b);
+            const randomColor = prizes[Math.floor(Math.random()*4)].color;
+            b.style.backgroundColor = randomColor;
+            setRandomPos(b);
+            container.appendChild(b);
         }
     }
 
-    function playGacha() {
-        if(pool.length === 0) return alert("已抽完！");
+    function setRandomPos(el) {
+        el.style.left = Math.random() * 180 + 'px';
+        el.style.top = Math.random() * 180 + 'px';
+        el.style.transform = `rotate(${Math.random()*360}deg)`;
+    }
+
+    function startDraw() {
+        if (pool.length === 0) return alert("已抽空！");
         
         drawBtn.disabled = true;
-        machine.classList.add('shaking');
-
-        // 隨機噴發位移
         const balls = document.querySelectorAll('.ball');
-        balls.forEach(b => {
-            b.style.transition = "0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67)";
-            b.style.left = Math.random() * 80 + '%';
-            b.style.top = Math.random() * 80 + '%';
-        });
+        
+        // 開始滾動動畫（進行 3 次高速位移）
+        let count = 0;
+        const interval = setInterval(() => {
+            balls.forEach(b => setRandomPos(b));
+            count++;
+            if (count > 3) {
+                clearInterval(interval);
+                finishDraw();
+            }
+        }, 300);
+    }
 
+    function finishDraw() {
+        const result = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        
         setTimeout(() => {
-            machine.classList.remove('shaking');
-            const drop = document.getElementById('dropped-ball');
-            const result = pool.splice(Math.floor(Math.random()*pool.length), 1)[0];
+            document.getElementById('res-rank').innerText = result.rank;
+            document.getElementById('res-name').innerText = result.name;
+            document.getElementById('remain').innerText = pool.length;
             
-            // 掉球動畫
-            drop.style.display = 'block';
-            drop.style.backgroundColor = result.color;
-            drop.style.animation = 'dropBall 0.6s forwards';
-
-            setTimeout(() => {
-                showResult(result);
-                drawBtn.disabled = false;
-                document.getElementById('count').innerText = pool.length;
-            }, 700);
-        }, 1500);
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('resultBox').style.display = 'block';
+        }, 500);
     }
 
-    function showResult(item) {
-        document.getElementById('res-rank').innerText = item.rank;
-        document.getElementById('res-name').innerText = item.name;
-        document.getElementById('overlay').style.display = 'block';
-        document.getElementById('modal').style.display = 'block';
-    }
-
-    function closeModal() {
+    function closeResult() {
         document.getElementById('overlay').style.display = 'none';
-        document.getElementById('modal').style.display = 'none';
-        document.getElementById('dropped-ball').style.display = 'none';
-        init(); // 重新打亂球的位置
+        document.getElementById('resultBox').style.display = 'none';
+        drawBtn.disabled = false;
+        initBalls(); // 重新攪拌
     }
 
-    init();
+    initBalls();
 </script>
+
 </body>
 </html>
