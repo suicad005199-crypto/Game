@@ -12,7 +12,6 @@
         background-color: #f9f9f9;
         color: #111;
     }
-
     header {
         background-color: #4a90e2;
         color: #fff;
@@ -21,12 +20,10 @@
         font-size: 1.2rem;
         font-weight: bold;
     }
-
     .table-container {
         overflow-x: auto;
         padding: 10px 0;
     }
-
     table {
         border-collapse: collapse;
         width: 100%;
@@ -36,13 +33,11 @@
         border-radius: 8px;
         overflow: hidden;
     }
-
     th, td {
         padding: 8px 12px;
         text-align: center;
         border-bottom: 1px solid #eee;
     }
-
     th {
         background-color: #f0f4f8;
         font-weight: 600;
@@ -50,15 +45,15 @@
         top: 0;
         z-index: 2;
     }
-
     tr:nth-child(even) td {
         background-color: #fafafa;
     }
-
     tr:hover td {
         background-color: #e6f0fa;
     }
-
+    .highlight {
+        background-color: #ffe680 !important; /* 命中 ≥3 星高亮 */
+    }
     @media (max-width: 480px) {
         th, td {
             padding: 6px 8px;
@@ -88,22 +83,25 @@
 </div>
 
 <script>
-// Google Sheet API URL
-const apiURL = 'https://script.google.com/macros/s/AKfycbxzL2Z5p7Apm5jBFT5BjCO-HCCMHMWMeJGVD5LRekiHKZqXGV_-wVc-kdDSjCub_Ej13g/exec';
+const apiURL = 'https://script.google.com/macros/s/AKfycbwZB6mLg7fz0puNcOhn3Tj4CsPnC71avEjQKxhVSt02-fLuJf4ATVerrJN89gCzl9JrJg/exec';
 
 async function fetchData() {
     try {
         const response = await fetch(apiURL);
         const data = await response.json();
 
-        // 假設 API 回傳陣列，每筆資料結構：
-        // { "日期": "2026-01-02", "開獎號碼": "17,18,25,36,39", "預測號碼": "1,12,15,27,33", "命中星數": 0 }
-
         const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = ''; // 清空
+        tbody.innerHTML = '';
+
+        // 日期排序：最新在上
+        data.sort((a, b) => new Date(b.日期) - new Date(a.日期));
 
         data.forEach(item => {
             const tr = document.createElement('tr');
+
+            if (Number(item.命中星數) >= 3) {
+                tr.classList.add('highlight'); // 高亮
+            }
 
             const tdDate = document.createElement('td');
             tdDate.textContent = item.日期;
@@ -131,7 +129,6 @@ async function fetchData() {
     }
 }
 
-// 初始化抓取
 fetchData();
 </script>
 
