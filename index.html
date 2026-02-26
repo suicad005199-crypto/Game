@@ -1,88 +1,139 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mario Party Clicker</title>
-    <style>
-        body { 
-            margin: 0; padding: 0; overflow: hidden; 
-            font-family: Arial, sans-serif; background: #f8d305; /* 瑪利歐黃 */
-            text-align: center; touch-action: manipulation;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今彩539 滾動回測表</title>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #111;
+    }
+
+    header {
+        background-color: #4a90e2;
+        color: #fff;
+        padding: 12px 16px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 600px;
+        background-color: #fff;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 8px 12px;
+        text-align: center;
+        border-bottom: 1px solid #eee;
+    }
+
+    th {
+        background-color: #f0f4f8;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    tr:nth-child(even) td {
+        background-color: #fafafa;
+    }
+
+    tr:hover td {
+        background-color: #e6f0fa;
+    }
+
+    @media (max-width: 480px) {
+        th, td {
+            padding: 6px 8px;
+            font-size: 0.85rem;
         }
-        #ui { padding-top: 50px; }
-        #score { font-size: 80px; font-weight: bold; color: #e52521; }
-        #timer { font-size: 24px; color: #333; }
-        #btn {
-            width: 200px; height: 200px; border-radius: 50%;
-            background: #e52521; border: 8px solid #fff;
-            box-shadow: 0 10px 0 #a31a17; color: white;
-            font-size: 30px; font-weight: bold; margin: 40px auto;
-            display: flex; align-items: center; justify-content: center;
-            user-select: none; -webkit-tap-highlight-color: transparent;
-        }
-        #btn:active { transform: translateY(5px); box-shadow: 0 5px 0 #a31a17; }
-        .reset { font-size: 18px; color: blue; text-decoration: underline; cursor: pointer; }
-    </style>
+    }
+</style>
 </head>
 <body>
-    <div id="ui">
-        <div id="timer">剩餘時間: <span id="time">10</span>s</div>
-        <div id="score">0</div>
-        <div id="btn">點我！</div>
-        <div id="msg"></div>
-    </div>
+
+<header>今彩539 滾動回測結果</header>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>日期</th>
+                <th>開獎號碼</th>
+                <th>預測號碼</th>
+                <th>命中星數</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body">
+            <tr><td colspan="4">載入中...</td></tr>
+        </tbody>
+    </table>
+</div>
 
 <script>
-    let count = 0;
-    let timeLeft = 10;
-    let active = false;
-    let timerId = null;
+// Google Sheet API URL
+const apiURL = 'https://script.google.com/macros/s/AKfycbxzL2Z5p7Apm5jBFT5BjCO-HCCMHMWMeJGVD5LRekiHKZqXGV_-wVc-kdDSjCub_Ej13g/exec';
 
-    const btn = document.getElementById('btn');
-    const scoreDisp = document.getElementById('score');
-    const timeDisp = document.getElementById('time');
-    const msgDisp = document.getElementById('msg');
+async function fetchData() {
+    try {
+        const response = await fetch(apiURL);
+        const data = await response.json();
 
-    // 處理點擊 (支援 iOS touch)
-    function handleClick(e) {
-        e.preventDefault(); // 防止 iOS 縮放或連點延遲
-        
-        if (timeLeft <= 0) return;
+        // 假設 API 回傳陣列，每筆資料結構：
+        // { "日期": "2026-01-02", "開獎號碼": "17,18,25,36,39", "預測號碼": "1,12,15,27,33", "命中星數": 0 }
 
-        // 第一次點擊啟動計時
-        if (!active) {
-            active = true;
-            startTimer();
-        }
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = ''; // 清空
 
-        count++;
-        scoreDisp.innerText = count;
-        
-        // 簡單的縮放效果
-        btn.style.transform = "scale(0.95)";
-        setTimeout(() => btn.style.transform = "scale(1)", 50);
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+
+            const tdDate = document.createElement('td');
+            tdDate.textContent = item.日期;
+            tr.appendChild(tdDate);
+
+            const tdOpen = document.createElement('td');
+            tdOpen.textContent = item.開獎號碼;
+            tr.appendChild(tdOpen);
+
+            const tdPred = document.createElement('td');
+            tdPred.textContent = item.預測號碼;
+            tr.appendChild(tdPred);
+
+            const tdHit = document.createElement('td');
+            tdHit.textContent = item.命中星數;
+            tr.appendChild(tdHit);
+
+            tbody.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error('抓取資料失敗：', error);
+        const tbody = document.getElementById('data-table-body');
+        tbody.innerHTML = '<tr><td colspan="4">載入資料失敗</td></tr>';
     }
+}
 
-    function startTimer() {
-        timerId = setInterval(() => {
-            timeLeft--;
-            timeDisp.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(timerId);
-                endGame();
-            }
-        }, 1000);
-    }
-
-    function endGame() {
-        btn.style.backgroundColor = "#888";
-        msgDisp.innerHTML = `<h3>遊戲結束！</h3><p class="reset" onclick="location.reload()">重新挑戰</p>`;
-    }
-
-    // 綁定觸控與滑鼠事件
-    btn.addEventListener('touchstart', handleClick);
-    btn.addEventListener('mousedown', handleClick);
+// 初始化抓取
+fetchData();
 </script>
+
 </body>
 </html>
