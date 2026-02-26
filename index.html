@@ -1,136 +1,163 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>今彩539 滾動回測表</title>
-<style>
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f9f9f9;
-        color: #111;
-    }
-    header {
-        background-color: #4a90e2;
-        color: #fff;
-        padding: 12px 16px;
-        text-align: center;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    .table-container {
-        overflow-x: auto;
-        padding: 10px 0;
-    }
-    table {
-        border-collapse: collapse;
-        width: 100%;
-        min-width: 600px;
-        background-color: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    th, td {
-        padding: 8px 12px;
-        text-align: center;
-        border-bottom: 1px solid #eee;
-    }
-    th {
-        background-color: #f0f4f8;
-        font-weight: 600;
-        position: sticky;
-        top: 0;
-        z-index: 2;
-    }
-    tr:nth-child(even) td {
-        background-color: #fafafa;
-    }
-    tr:hover td {
-        background-color: #e6f0fa;
-    }
-    .highlight {
-        background-color: #ffe680 !important; /* 命中 ≥3 星高亮 */
-    }
-    @media (max-width: 480px) {
-        th, td {
-            padding: 6px 8px;
-            font-size: 0.85rem;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gemini 539 預測系統架構</title>
+    <style>
+        /* 定義黑橘主題色系 */
+        :root {
+            --bg-dark: #0d0d0d;
+            --bg-card: #1a1a1a;
+            --primary-orange: #ff7700;
+            --glow-orange: rgba(255, 119, 0, 0.4);
+            --text-main: #ffffff;
+            --text-sub: #b3b3b3;
         }
-    }
-</style>
+
+        /* 基礎排版與 iOS 適配 */
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 頂部標題區塊 */
+        header {
+            text-align: center;
+            padding: 30px 0 20px 0;
+            border-bottom: 2px solid var(--primary-orange);
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: var(--primary-orange);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 10px var(--glow-orange);
+        }
+
+        header p {
+            font-size: 14px;
+            color: var(--text-sub);
+            margin: 0;
+        }
+
+        /* 策略卡片設計 */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-orange);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin: 0 0 15px 0;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+        }
+
+        .card h2 span {
+            background-color: var(--primary-orange);
+            color: var(--bg-dark);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .card p, .card ul {
+            font-size: 15px;
+            color: var(--text-sub);
+            line-height: 1.6;
+        }
+
+        .card ul {
+            padding-left: 20px;
+            margin-top: 10px;
+            margin-bottom: 0;
+        }
+
+        .card li {
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            color: var(--primary-orange);
+            font-weight: bold;
+        }
+
+        /* 底部提示區塊 */
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: rgba(255, 119, 0, 0.1);
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
 
-<header>今彩539 滾動回測結果</header>
+    <div class="container">
+        <header>
+            <h1>Gemini 系統邏輯 1.0</h1>
+            <p>今彩539 數據滾動回測架構</p>
+        </header>
 
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th>日期</th>
-                <th>開獎號碼</th>
-                <th>預測號碼</th>
-                <th>命中星數</th>
-            </tr>
-        </thead>
-        <tbody id="data-table-body">
-            <tr><td colspan="4">載入中...</td></tr>
-        </tbody>
-    </table>
-</div>
+        <div class="card">
+            <h2><span>Step 1</span> 數據採集與特徵提取</h2>
+            <p>將彩券視為帶有雜訊的數據流，抓取前 30-50 期數據進行指標運算：</p>
+            <ul>
+                <li><span class="highlight">熱度頻率：</span>統計各號碼近期開出次數。</li>
+                <li><span class="highlight">遺漏值：</span>計算各號碼距離上次開出已間隔幾期。</li>
+            </ul>
+        </div>
 
-<script>
-const apiURL = 'https://script.google.com/macros/s/AKfycbwZB6mLg7fz0puNcOhn3Tj4CsPnC71avEjQKxhVSt02-fLuJf4ATVerrJN89gCzl9JrJg/exec';
+        <div class="card">
+            <h2><span>Step 2</span> 核心權重分配 (Weights)</h2>
+            <p>不單押冷熱號，透過多維度權重選取高勝率號碼：</p>
+            <ul>
+                <li><span class="highlight">趨勢跟隨 (30%)：</span>鎖定近 10 期內的強勢連莊號碼。</li>
+                <li><span class="highlight">均值回歸 (20%)：</span>挑選遺漏值達統計極限即將回檔的冷號。</li>
+                <li><span class="highlight">關聯分析 (20%)：</span>捕捉歷史上常「同出」的組合 (拖牌效應)。</li>
+                <li><span class="highlight">尾數偏好 (30%)：</span>鎖定近期剛啟動或極度活躍的「同尾數」。</li>
+            </ul>
+        </div>
 
-async function fetchData() {
-    try {
-        const response = await fetch(apiURL);
-        const data = await response.json();
+        <div class="card">
+            <h2><span>Step 3</span> 濾網校準 (Constraints)</h2>
+            <p>剔除 99% 不可能發生的極端組合，提升資金效率：</p>
+            <ul>
+                <li><span class="highlight">和值限制：</span>5 碼加總必須落在 <strong>75 ~ 125</strong> 之間。</li>
+                <li><span class="highlight">奇偶平衡：</span>強制奇偶比為 <strong>2:3</strong> 或 <strong>3:2</strong>。</li>
+                <li><span class="highlight">連號控制：</span>最多允許一組 2 連號，排除 3 連號以上。</li>
+            </ul>
+        </div>
 
-        const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = '';
-
-        // 日期排序：最新在上
-        data.sort((a, b) => new Date(b.日期) - new Date(a.日期));
-
-        data.forEach(item => {
-            const tr = document.createElement('tr');
-
-            if (Number(item.命中星數) >= 3) {
-                tr.classList.add('highlight'); // 高亮
-            }
-
-            const tdDate = document.createElement('td');
-            tdDate.textContent = item.日期;
-            tr.appendChild(tdDate);
-
-            const tdOpen = document.createElement('td');
-            tdOpen.textContent = item.開獎號碼;
-            tr.appendChild(tdOpen);
-
-            const tdPred = document.createElement('td');
-            tdPred.textContent = item.預測號碼;
-            tr.appendChild(tdPred);
-
-            const tdHit = document.createElement('td');
-            tdHit.textContent = item.命中星數;
-            tr.appendChild(tdHit);
-
-            tbody.appendChild(tr);
-        });
-
-    } catch (error) {
-        console.error('抓取資料失敗：', error);
-        const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = '<tr><td colspan="4">載入資料失敗</td></tr>';
-    }
-}
-
-fetchData();
-</script>
+        <div class="footer-note">
+            ⚠️ 免責聲明：本模型為數學機率與歷史統計分析，旨在優化選號邏輯與過濾極端組合，不保證中獎。請理性評估，量力而為。
+        </div>
+    </div>
 
 </body>
 </html>
