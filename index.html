@@ -25,7 +25,7 @@
         .logo { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
         .menu-btn { font-size: 26px; color: var(--gold); cursor: pointer; transition: 0.2s; }
 
-        /* 側邊選單 (分類藏在這裡) */
+        /* 側邊選單 */
         .sidebar { 
             position: fixed; top: 0; left: -100%; width: 280px; height: 100%; 
             background: #0f0f11; z-index: 1001; 
@@ -61,22 +61,37 @@
         }
         .promo-banner::after { content: "NEBULA EXCLUSIVE"; color: rgba(255,255,255,0.1); font-weight: 900; font-size: 20px; }
 
-        /* 遊戲網格 */
-        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px 15px 50px; }
+        /* 遊戲網格 (優化：縮小卡片比例) */
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 15px 20px; }
         .game-card { 
-            background: var(--card); border-radius: 14px; overflow: hidden; 
+            background: var(--card); border-radius: 10px; overflow: hidden; 
             border: 1px solid var(--border); transition: 0.2s; position: relative;
         }
         .game-card:active { transform: scale(0.96); }
         .game-img-wrapper { position: relative; width: 100%; aspect-ratio: 1/1; }
         .game-img { width: 100%; height: 100%; background-size: cover; background-position: center; }
         .game-badge { 
-            position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); 
-            padding: 2px 8px; border-radius: 4px; font-size: 10px; color: var(--gold); backdrop-filter: blur(4px);
+            position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); 
+            padding: 2px 6px; border-radius: 4px; font-size: 9px; color: var(--gold); backdrop-filter: blur(4px);
         }
-        .game-info { padding: 10px; text-align: left; }
-        .game-title { color: #fff; font-weight: 600; font-size: 13px; margin-bottom: 2px; }
-        .game-desc { color: #555; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* 優化：縮小文字與內距 */
+        .game-info { padding: 8px; text-align: left; }
+        .game-title { color: #fff; font-weight: 600; font-size: 12px; margin-bottom: 2px; }
+        .game-desc { color: #555; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* 分頁器樣式 */
+        .pagination { 
+            display: flex; justify-content: center; align-items: center; 
+            gap: 15px; margin-bottom: 40px; 
+        }
+        .page-btn { 
+            background: var(--glass); border: 1px solid var(--border); 
+            color: #aaa; padding: 6px 14px; border-radius: 20px; 
+            font-size: 12px; cursor: pointer; transition: 0.3s;
+        }
+        .page-btn:active:not(:disabled) { background: var(--gold); color: #000; border-color: var(--gold); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: var(--gold); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -88,14 +103,14 @@
             <li onclick="filterCategory('all', this)" class="active"><i>🏠</i> 全部遊戲</li>
             <li onclick="filterCategory('棋牌', this)"><i>🃏</i> 棋牌中心</li>
             <li onclick="filterCategory('老虎機', this)"><i>🎰</i> 熱門老虎機</li>
-            <li onclick="filterCategory('限定', this)"><i>🔥</i> 店長推薦</li>
+            <li onclick="filterCategory('限定', this)"><i>🔥</i> 限定推薦</li>
             <li onclick="filterCategory('LIVE', this)"><i>📺</i> 真人視訊</li>
         </ul>
     </nav>
 
     <header class="navbar">
         <div class="menu-btn" onclick="toggleMenu()">☰</div>
-        <div class="logo">NEBULA</div>
+        <div class="logo">NEBULA CASINO</div>
         <button class="login-btn" style="background:var(--gold); border:none; border-radius:20px; padding:6px 15px; font-weight:bold; font-size:12px;">登入</button>
     </header>
 
@@ -107,13 +122,19 @@
         <p style="text-align: center; grid-column: span 2; padding: 40px; color: #333;">LOADING...</p>
     </main>
 
+    <div class="pagination" id="pagination" style="display: none;">
+        <button class="page-btn" id="prev-btn" onclick="changePage(-1)">◀ 上一頁</button>
+        <span class="page-info" id="page-num">1</span>
+        <button class="page-btn" id="next-btn" onclick="changePage(1)">下一頁 ▶</button>
+    </div>
+
     <script type="module" src="./js/lobby.js"></script>
     <script>
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('overlay').classList.toggle('active');
         }
-        window.toggleMenu = toggleMenu; // 暴露給 lobby.js 使用
+        window.toggleMenu = toggleMenu;
     </script>
 </body>
 </html>
