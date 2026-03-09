@@ -11,7 +11,7 @@
             --card: #161618;
             --glass: rgba(255, 255, 255, 0.03);
             --border: rgba(255, 255, 255, 0.08);
-            --nav-h: 65px;
+            --nav-h: 55px; /* 優化：降低整體高度 */
         }
         
         body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; }
@@ -94,18 +94,19 @@
             backdrop-filter: blur(20px);
             border-top: 1px solid var(--border);
             display: flex; justify-content: space-around; align-items: center;
+            padding-top: 5px; /* 優化：微調內部空間，避免貼頂 */
             padding-bottom: env(safe-area-inset-bottom);
             z-index: 1000;
         }
         .tab-item {
             flex: 1; display: flex; flex-direction: column; align-items: center;
             color: #888; text-decoration: none; transition: 0.2s;
-            background: none; border: none; padding: 0; /* 按鈕樣式重設 */
+            background: none; border: none; padding: 0; cursor: pointer;
         }
-        .tab-item i { font-style: normal; font-size: 20px; margin-bottom: 4px; }
-        .tab-item span { font-size: 11px; font-weight: 500; }
+        .tab-item i { font-style: normal; font-size: 18px; margin-bottom: 2px; } /* 優化：縮小圖示 */
+        .tab-item span { font-size: 10px; font-weight: 500; } /* 優化：縮小文字 */
         .tab-item.active { color: var(--gold); }
-        .tab-item:active { transform: scale(0.9); }
+        .tab-item:active { transform: scale(0.9); opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -153,11 +154,11 @@
     </div>
 
     <nav class="tab-bar">
-        <a href="#" class="tab-item active" onclick="setActiveTab(this)"><i>🏠</i><span>大廳</span></a>
-        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>💰</i><span>儲值</span></a>
+        <button class="tab-item active" onclick="setActiveTab(this)"><i>🏠</i><span>大廳</span></button>
+        <button class="tab-item" onclick="setActiveTab(this)"><i>💰</i><span>儲值</span></button>
         <button class="tab-item" onclick="toggleMenu()"><i>☰</i><span>選單</span></button>
-        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>🎧</i><span>客服</span></a>
-        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>👤</i><span>會員</span></a>
+        <button class="tab-item" onclick="setActiveTab(this)"><i>🎧</i><span>客服</span></button>
+        <button class="tab-item" onclick="setActiveTab(this)"><i>👤</i><span>會員</span></button>
     </nav>
 
     <script type="module" src="./js/lobby.js"></script>
@@ -171,27 +172,28 @@
         function setActiveTab(el) {
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
-            // 如果點擊的是大廳等分頁，確保側邊欄關閉
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('overlay').classList.remove('active');
         }
         window.setActiveTab = setActiveTab;
 
-        // 輪播初始化
         function initBanner() {
             const banner = document.getElementById('promo-banner');
             const slides = document.querySelectorAll('.banner-slide');
             const dotsContainer = document.getElementById('banner-dots');
-            let currentSlide = 0; let timer = null; let startX = 0;
+            let currentSlide = 0, timer = null, startX = 0;
+            
             if (slides.length <= 1) return;
+            
             slides.forEach((_, i) => {
                 const dot = document.createElement('div');
-                dot.classList.add('dot');
-                if (i === 0) dot.classList.add('active');
+                dot.className = `dot ${i === 0 ? 'active' : ''}`;
                 dot.onclick = () => goToSlide(i);
                 dotsContainer.appendChild(dot);
             });
+            
             const dots = document.querySelectorAll('.dot');
+            
             function goToSlide(n) {
                 if(!slides[currentSlide]) return;
                 slides[currentSlide].classList.remove('active');
@@ -201,13 +203,16 @@
                 dots[currentSlide].classList.add('active');
                 resetTimer();
             }
-            function nextSlide() { goToSlide(currentSlide + 1); }
-            function resetTimer() { clearInterval(timer); timer = setInterval(nextSlide, 5000); }
-            banner.addEventListener('touchstart', (e) => startX = e.touches[0].clientX, {passive:true});
-            banner.addEventListener('touchend', (e) => {
+            
+            const nextSlide = () => goToSlide(currentSlide + 1);
+            const resetTimer = () => { clearInterval(timer); timer = setInterval(nextSlide, 5000); };
+            
+            banner.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive:true});
+            banner.addEventListener('touchend', e => {
                 const diff = startX - e.changedTouches[0].clientX;
                 if (Math.abs(diff) > 50) diff > 0 ? nextSlide() : goToSlide(currentSlide - 1);
             }, {passive:true});
+            
             resetTimer();
         }
         document.addEventListener('DOMContentLoaded', initBanner);
