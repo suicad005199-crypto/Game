@@ -1,6 +1,9 @@
 import { api } from './api.js';
 
 let allGames = [];
+let filteredGames = [];
+let currentPage = 1;
+const PAGE_SIZE = 4; // 限制單頁最多顯示 4 款
 
 /**
  * 初始化載入資料
@@ -9,25 +12,37 @@ async function initLobby() {
     const grid = document.getElementById('game-grid');
     try {
         allGames = await api.getActiveGames();
-        console.log('[Lobby] 資料同步成功', allGames.length, '款遊戲');
-        renderGames(allGames);
+        filteredGames = [...allGames]; // 初始顯示全部
+        renderCurrentPage();
     } catch (err) {
         grid.innerHTML = '<p style="color: #ff4436; text-align: center;">連線異常，請重整</p>';
     }
 }
 
 /**
- * 渲染卡片邏輯
+ * 依據當前頁碼渲染卡片與更新分頁按鈕狀態
  */
-function renderGames(list) {
+function renderCurrentPage() {
     const grid = document.getElementById('game-grid');
+    const pagination = document.getElementById('pagination');
+    const pageNum = document.getElementById('page-num');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
     
-    if (!list.length) {
+    // 無資料處理
+    if (!filteredGames.length) {
         grid.innerHTML = '<p style="text-align: center; grid-column: span 2; color: #444; padding: 50px 0;">目前無符合分類的遊戲</p>';
+        pagination.style.display = 'none';
         return;
     }
 
-    grid.innerHTML = list.map(game => `
+    // 計算切割範圍
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const itemsToShow = filteredGames.slice(start, end);
+
+    // 渲染遊戲卡片
+    grid.innerHTML = itemsToShow.map(game => `
         <div class="game-card" onclick="location.href='${game.game_url}'">
             <div class="game-img-wrapper">
                 <div class="game-img" style="background-image: url('./images/${game.image_path}')"></div>
@@ -39,28 +54,43 @@ function renderGames(list) {
             </div>
         </div>
     `).join('');
+
+    // 控制分頁器顯示與按鈕狀態
+    if (filteredGames.length > PAGE_SIZE) {
+        pagination.style.display = 'flex';
+        pageNum.innerText = currentPage;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = end >= filteredGames.length;
+    } else {
+        pagination.style.display = 'none';
+    }
 }
 
 /**
- * 全域過濾函數
- * @param {string} cat 分類標籤
- * @param {HTMLElement} el 點擊的選單元素
+ * 分頁切換功能
+ */
+window.changePage = (step) => {
+    currentPage += step;
+    renderCurrentPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // 切換後回到上方
+};
+
+/**
+ * 全域過濾函數 (整合分頁重置)
  */
 window.filterCategory = (cat, el) => {
-    // 1. 切換側邊欄選單的高亮狀態
     document.querySelectorAll('.sidebar-menu li').forEach(item => item.classList.remove('active'));
     el.classList.add('active');
 
-    // 2. 執行過濾
-    const filtered = cat === 'all' ? allGames : allGames.filter(g => g.category === cat);
-    renderGames(filtered);
+    // 執行過濾並重置回第 1 頁
+    filteredGames = cat === 'all' ? allGames : allGames.filter(g => g.category === cat);
+    currentPage = 1; 
 
-    // 3. 過濾完後自動收起漢堡選單
+    renderCurrentPage();
+
     if (typeof window.toggleMenu === 'function') {
         window.toggleMenu();
     }
-    
-    // 4. 回到頂部以獲得最佳視覺感受
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
