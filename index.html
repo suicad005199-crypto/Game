@@ -52,30 +52,29 @@
         }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        /* 英雄公告區 */
+        /* 英雄公告區 (輪播優化) */
         .hero { padding: 15px; }
         .promo-banner { 
-         width: 100%; 
-         height: 140px; 
-         border-radius: 16px;
-         border: 1px solid var(--border); 
-         display: flex; 
-         align-items: center; 
-         justify-content: center;
-    
-         /* --- 修改重點：置入圖片 --- */
-         background-image: url('./images/banner.jpg'); /* 替換成你的圖片檔名 */
-         background-size: cover;      /* 讓圖片填滿整個框 */
-         background-position: center; /* 讓圖片置中 */
-         background-repeat: no-repeat;
-         }
+            width: 100%; 
+            height: 140px; 
+            border-radius: 16px;
+            border: 1px solid var(--border); 
+            position: relative;
+            overflow: hidden; /* 隱藏容器外的圖片 */
+        }
+        /* 輪播圖片的共用樣式 */
+        .banner-slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out; /* 淡入淡出效果 */
+        }
+        .banner-slide.active { opacity: 1; }
 
-         /* 移除原本的偽元素文字 (如果你不想看到 NEBULA EXCLUSIVE) */
-         .promo-banner::after { 
-          display: none; 
-          }
-
-        /* 遊戲網格 (優化：縮小卡片比例) */
+        /* 遊戲網格 */
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 15px 20px; }
         .game-card { 
             background: var(--card); border-radius: 10px; overflow: hidden; 
@@ -88,7 +87,6 @@
             position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); 
             padding: 2px 6px; border-radius: 4px; font-size: 9px; color: var(--gold); backdrop-filter: blur(4px);
         }
-        /* 優化：縮小文字與內距 */
         .game-info { padding: 8px; text-align: left; }
         .game-title { color: #fff; font-weight: 600; font-size: 12px; margin-bottom: 2px; }
         .game-desc { color: #555; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -129,7 +127,11 @@
     </header>
 
     <section class="hero">
-        <div class="promo-banner"></div>
+        <div class="promo-banner" id="promo-banner">
+            <div class="banner-slide active" style="background-image: url('./images/banner.jpg');"></div>
+            <div class="banner-slide" style="background-image: url('./images/banner2.jpg');"></div>
+            <div class="banner-slide" style="background-image: url('./images/banner3.jpg');"></div>
+        </div>
     </section>
 
     <main class="game-grid" id="game-grid">
@@ -144,13 +146,33 @@
 
     <script type="module" src="./js/lobby.js"></script>
     <script>
+        // 側邊欄開關
         function toggleMenu() {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('overlay').classList.toggle('active');
         }
         window.toggleMenu = toggleMenu;
+
+        // --- 自動輪播邏輯 ---
+        function startBannerRotation() {
+            const slides = document.querySelectorAll('.banner-slide');
+            let currentSlide = 0;
+
+            if (slides.length <= 1) return; // 只有一張圖就不輪播
+
+            setInterval(() => {
+                // 移除當前圖片的 active 類別
+                slides[currentSlide].classList.remove('active');
+                
+                // 計算下一張圖片索引
+                currentSlide = (currentSlide + 1) % slides.length;
+                
+                // 加入 active 類別（觸發淡入效果）
+                slides[currentSlide].classList.add('active');
+            }, 5000); // 每 5 秒切換一次
+        }
+
+        document.addEventListener('DOMContentLoaded', startBannerRotation);
     </script>
 </body>
 </html>
-
-
