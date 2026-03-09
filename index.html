@@ -11,6 +11,7 @@
             --card: #161618;
             --glass: rgba(255, 255, 255, 0.03);
             --border: rgba(255, 255, 255, 0.08);
+            --nav-h: 65px; /* 底部導航高度 */
         }
         
         body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', -apple-system, sans-serif; overflow-x: hidden; }
@@ -52,82 +53,53 @@
         }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        /* 英雄公告區 (支援滑動與圓點) */
+        /* 輪播區 */
         .hero { padding: 15px; }
         .promo-banner { 
-            width: 100%; 
-            height: 140px; 
-            border-radius: 16px;
-            border: 1px solid var(--border); 
-            position: relative;
-            overflow: hidden;
-            touch-action: pan-y; /* 允許垂直捲動，水平滑動由 JS 處理 */
+            width: 100%; height: 140px; border-radius: 16px; border: 1px solid var(--border); 
+            position: relative; overflow: hidden; touch-action: pan-y;
         }
-        .banner-slide {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0;
-            transition: opacity 0.6s ease-in-out; 
-        }
+        .banner-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 0.6s; }
         .banner-slide.active { opacity: 1; }
+        .banner-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: 0.3s; }
+        .dot.active { background: var(--gold); width: 16px; border-radius: 10px; }
 
-        /* 輪播小圓點 */
-        .banner-dots {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 6px;
-            z-index: 10;
-        }
-        .dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transition: 0.3s;
-            cursor: pointer;
-        }
-        .dot.active {
-            background: var(--gold);
-            width: 16px; /* 啟動時拉長，更有現代感 */
-            border-radius: 10px;
-        }
-
-        /* 遊戲網格 */
+        /* 遊戲網格與分頁 */
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px 15px 20px; }
-        .game-card { 
-            background: var(--card); border-radius: 10px; overflow: hidden; 
-            border: 1px solid var(--border); transition: 0.2s; position: relative;
-        }
-        .game-card:active { transform: scale(0.96); }
+        .game-card { background: var(--card); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); transition: 0.2s; position: relative; }
         .game-img-wrapper { position: relative; width: 100%; aspect-ratio: 1/1; }
         .game-img { width: 100%; height: 100%; background-size: cover; background-position: center; }
-        .game-badge { 
-            position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); 
-            padding: 2px 6px; border-radius: 4px; font-size: 9px; color: var(--gold); backdrop-filter: blur(4px);
-        }
-        .game-info { padding: 8px; text-align: left; }
+        .game-badge { position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 9px; color: var(--gold); backdrop-filter: blur(4px); }
+        .game-info { padding: 8px; }
         .game-title { color: #fff; font-weight: 600; font-size: 12px; margin-bottom: 2px; }
         .game-desc { color: #555; font-size: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* 分頁器 */
         .pagination { 
-            display: flex; justify-content: center; align-items: center; 
-            gap: 15px; margin-bottom: 40px; 
+            display: flex; justify-content: center; align-items: center; gap: 15px; 
+            margin-bottom: calc(var(--nav-h) + 40px); /* 增加底部間距避免被 Tab Bar 遮擋 */
         }
-        .page-btn { 
-            background: var(--glass); border: 1px solid var(--border); 
-            color: #aaa; padding: 6px 14px; border-radius: 20px; 
-            font-size: 12px; cursor: pointer; transition: 0.3s;
+        .page-btn { background: var(--glass); border: 1px solid var(--border); color: #aaa; padding: 6px 14px; border-radius: 20px; font-size: 12px; }
+
+        /* --- 底部導航列 (Tab Bar) --- */
+        .tab-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            height: var(--nav-h);
+            background: rgba(15, 15, 17, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around; align-items: center;
+            padding-bottom: env(safe-area-inset-bottom); /* 適應全螢幕手機底部 */
+            z-index: 1000;
         }
-        .page-btn:active:not(:disabled) { background: var(--gold); color: #000; border-color: var(--gold); }
-        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .page-info { font-size: 13px; color: var(--gold); font-weight: bold; }
+        .tab-item {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            color: #888; text-decoration: none; transition: 0.2s;
+        }
+        .tab-item i { font-style: normal; font-size: 20px; margin-bottom: 4px; }
+        .tab-item span { font-size: 11px; font-weight: 500; }
+        .tab-item.active { color: var(--gold); }
+        .tab-item:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -139,7 +111,7 @@
             <li onclick="filterCategory('all', this)" class="active"><i>🏠</i> 全部遊戲</li>
             <li onclick="filterCategory('棋牌', this)"><i>🃏</i> 棋牌中心</li>
             <li onclick="filterCategory('老虎機', this)"><i>🎰</i> 熱門老虎機</li>
-            <li onclick="filterCategory('限定', this)"><i>🔥</i> 限定推薦</li>
+            <li onclick="filterCategory('限定', this)"><i>🔞</i> 限定推薦</li>
             <li onclick="filterCategory('LIVE', this)"><i>📺</i> 真人LIVE</li>
         </ul>
     </nav>
@@ -155,7 +127,6 @@
             <div class="banner-slide active" style="background-image: url('./images/banner.jpg');"></div>
             <div class="banner-slide" style="background-image: url('./images/banner2.jpg');"></div>
             <div class="banner-slide" style="background-image: url('./images/banner3.jpg');"></div>
-            
             <div class="banner-dots" id="banner-dots"></div>
         </div>
     </section>
@@ -170,6 +141,14 @@
         <button class="page-btn" id="next-btn" onclick="changePage(1)">下一頁 ▶</button>
     </div>
 
+    <nav class="tab-bar">
+        <a href="#" class="tab-item active" onclick="setActiveTab(this)"><i>🏠</i><span>大廳</span></a>
+        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>💰</i><span>儲值</span></a>
+        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>🎧</i><span>客服</span></a>
+        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>📊</i><span>報表</span></a>
+        <a href="#" class="tab-item" onclick="setActiveTab(this)"><i>👤</i><span>會員</span></a>
+    </nav>
+
     <script type="module" src="./js/lobby.js"></script>
     <script>
         function toggleMenu() {
@@ -178,68 +157,45 @@
         }
         window.toggleMenu = toggleMenu;
 
-        // --- 輪播邏輯 (含左右滑動與圓點) ---
+        // 設定選中狀態
+        function setActiveTab(el) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+        window.setActiveTab = setActiveTab;
+
+        // 輪播初始化 (同前版)
         function initBanner() {
             const banner = document.getElementById('promo-banner');
             const slides = document.querySelectorAll('.banner-slide');
             const dotsContainer = document.getElementById('banner-dots');
-            let currentSlide = 0;
-            let timer = null;
-            let startX = 0;
-
+            let currentSlide = 0; let timer = null; let startX = 0;
             if (slides.length <= 1) return;
-
-            // 1. 自動生成圓點
-            slides.forEach((_, index) => {
+            slides.forEach((_, i) => {
                 const dot = document.createElement('div');
                 dot.classList.add('dot');
-                if (index === 0) dot.classList.add('active');
-                dot.onclick = () => goToSlide(index);
+                if (i === 0) dot.classList.add('active');
+                dot.onclick = () => goToSlide(i);
                 dotsContainer.appendChild(dot);
             });
-
             const dots = document.querySelectorAll('.dot');
-
-            // 2. 切換功能
             function goToSlide(n) {
                 slides[currentSlide].classList.remove('active');
                 dots[currentSlide].classList.remove('active');
-                
                 currentSlide = (n + slides.length) % slides.length;
-                
                 slides[currentSlide].classList.add('active');
                 dots[currentSlide].classList.add('active');
-                
-                resetTimer(); // 手動操作後重新計時
+                resetTimer();
             }
-
             function nextSlide() { goToSlide(currentSlide + 1); }
-            function prevSlide() { goToSlide(currentSlide - 1); }
-
-            // 3. 自動播放計時器
-            function resetTimer() {
-                clearInterval(timer);
-                timer = setInterval(nextSlide, 5000);
-            }
-
-            // 4. 觸控滑動支援
-            banner.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-            }, {passive: true});
-
+            function resetTimer() { clearInterval(timer); timer = setInterval(nextSlide, 5000); }
+            banner.addEventListener('touchstart', (e) => startX = e.touches[0].clientX, {passive:true});
             banner.addEventListener('touchend', (e) => {
-                const endX = e.changedTouches[0].clientX;
-                const diff = startX - endX;
-
-                if (Math.abs(diff) > 50) { // 滑動距離超過 50px 才觸發
-                    if (diff > 0) nextSlide(); // 向左滑 -> 下一張
-                    else prevSlide();          // 向右滑 -> 上一張
-                }
-            }, {passive: true});
-
+                const diff = startX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) diff > 0 ? nextSlide() : goToSlide(currentSlide - 1);
+            }, {passive:true});
             resetTimer();
         }
-
         document.addEventListener('DOMContentLoaded', initBanner);
     </script>
 </body>
