@@ -1,5 +1,5 @@
-import { api } from './api.js';
-import { auth } from './auth.js';
+import { api } from './js/api.js';
+import { auth } from './js/auth.js';
 
 let allGames = [];
 let filteredGames = [];
