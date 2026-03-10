@@ -31,18 +31,26 @@
 
         /* 1. BANNER 區 */
         .hero { padding: 10px 15px; }
-        .promo-banner { 
-            width: 100%; height: 150px; border-radius: 12px; overflow: hidden; 
-            position: relative; border: 1px solid var(--border);
-        }
-        .banner-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: 0.8s; }
-        .banner-slide.active { opacity: 1; }
+        /* 1. BANNER 區高度優化 */
+.promo-banner { 
+    width: 100%; 
+    height: 110px; /* 從 150px 調降，增加遊戲區可視度 */
+    border-radius: 12px; 
+    overflow: hidden; 
+    position: relative; 
+    border: 1px solid var(--border);
+}
 
-        /* 2. 公告區 */
-        .marquee-bar {
-            background: #1a1a1d; height: 32px; display: flex; align-items: center;
-            padding: 0 15px; font-size: 12px; border-bottom: 1px solid var(--border);
-        }
+/* 額外優化：讓公告欄稍微扁平一點 */
+.marquee-bar {
+    background: #1a1a1d; 
+    height: 28px; /* 從 32px 調降 */
+    display: flex; 
+    align-items: center;
+    padding: 0 15px; 
+    font-size: 11px; 
+    border-bottom: 1px solid var(--border);
+}
         .marquee-label { color: var(--gold); font-weight: bold; margin-right: 10px; white-space: nowrap; }
         .marquee-content { flex: 1; overflow: hidden; white-space: nowrap; }
         .marquee-text { display: inline-block; animation: scroll 15s linear infinite; }
@@ -193,3 +201,4 @@
     <script type="module" src="./js/lobby.js"></script>
 </body>
 </html>
+
