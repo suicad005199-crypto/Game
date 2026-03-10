@@ -29,7 +29,7 @@
         }
         .logo { font-size: 18px; font-weight: 900; color: var(--gold); letter-spacing: 1px; }
 
-        /* 1. BANNER 區高度優化 (縮減高度防止遮擋) */
+        /* BANNER 區 */
         .hero { padding: 8px 15px; }
         .promo-banner { 
             width: 100%; height: 110px; border-radius: 12px; overflow: hidden; 
@@ -38,7 +38,7 @@
         .banner-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: 0.8s; }
         .banner-slide.active { opacity: 1; }
 
-        /* 2. 公告區優化 (稍微縮小高度) */
+        /* 公告區 */
         .marquee-bar {
             background: #1a1a1d; height: 28px; display: flex; align-items: center;
             padding: 0 15px; font-size: 11px; border-bottom: 1px solid var(--border);
@@ -48,21 +48,45 @@
         .marquee-text { display: inline-block; animation: scroll 15s linear infinite; }
         @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* 3. 遊戲區標題 */
+        /* 遊戲區標題 */
         .section-header { padding: 12px 15px 5px; display: flex; align-items: center; gap: 8px; }
         .section-title { font-size: 14px; font-weight: bold; color: var(--gold); margin: 0; }
         .section-line { flex: 1; height: 1px; background: var(--border); }
 
-        /* 4. 遊戲網格 */
+        /* 遊戲網格與卡片 */
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 10px 15px 20px; min-height: 200px; }
-        .game-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+        
+        .game-card { 
+            background: var(--card); border-radius: 12px; overflow: hidden; 
+            border: 1px solid var(--border); position: relative;
+        }
+
+        /* 維護狀態遮罩 - 壓黑置中 */
+        .game-card.maintenance { cursor: not-allowed; }
+        .maintenance-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(2px);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 50; border-radius: 12px;
+        }
+        .maintenance-icon { font-size: 24px; margin-bottom: 4px; }
+        .maintenance-text { 
+            color: var(--gold); font-size: 12px; font-weight: bold; 
+            text-align: center; line-height: 1.5; letter-spacing: 0.5px;
+        }
+
         .game-img-wrapper { position: relative; aspect-ratio: 4/3; }
         .game-img { width: 100%; height: 100%; background-size: cover; background-position: center; }
+        
+        /* 分類標籤 z-index 提升 */
+        .game-badge { z-index: 60; }
+
         .game-info { padding: 8px 10px; }
         .game-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
         .game-desc { color: #666; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* 分頁器 (增加底部安全間隔，確保不被 Tab Bar 遮擋) */
+        /* 分頁器 */
         .pagination { 
             display: flex; justify-content: center; align-items: center; gap: 15px; 
             padding-top: 10px;
@@ -85,7 +109,7 @@
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1500; opacity: 0; visibility: hidden; transition: 0.3s; }
         .overlay.active { opacity: 1; visibility: visible; }
 
-        /* 底部 Tab Bar (排序調整) */
+        /* 底部 Tab Bar */
         .tab-bar {
             position: fixed; bottom: 0; width: 100%; height: var(--nav-h);
             background: rgba(15, 15, 17, 0.98); backdrop-filter: blur(20px);
@@ -95,38 +119,6 @@
         .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #888; border: none; background: none; font-size: 10px; cursor: pointer; }
         .tab-item.active { color: var(--gold); }
         .tab-item i { font-size: 20px; margin-bottom: 2px; font-style: normal; }
-        
-        /* 遊戲卡片維護狀態樣式 */
-    .game-card.maintenance {
-    position: relative;
-    pointer-events: auto; /* 允許點擊以觸發 handleGameClick 的 alert */
-}
-
-.maintenance-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7); /* 半透明黑 */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    backdrop-filter: blur(2px);
-}
-
-.maintenance-text {
-    color: #fff;
-    font-size: 12px;
-    font-weight: bold;
-    text-align: center;
-    padding: 0 10px;
-    line-height: 1.5;
-}
-
-.maintenance-icon {
-    font-size: 20px;
-    margin-bottom: 5px;
-}
     </style>
 </head>
 <body>
@@ -216,4 +208,3 @@
     <script type="module" src="./js/lobby.js"></script>
 </body>
 </html>
-
