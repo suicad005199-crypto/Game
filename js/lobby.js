@@ -1,136 +1,60 @@
 import { api } from './api.js';
-import { auth } from './auth.js';
 
 let allGames = [];
 let filteredGames = [];
 let currentPage = 1;
-const PAGE_SIZE = 8; // 增加每頁顯示數量，更符合娛樂城大廳排版
+const PAGE_SIZE = 4; // 嚴格限制每頁 4 個
 
 /**
- * 初始化載入資料與會員狀態
+ * 初始化
  */
 async function initLobby() {
-    const grid = document.getElementById('game-grid');
-    
-    // 1. 同步檢查會員狀態
-    updateUserUI();
-
     try {
-        // 2. 獲取遊戲資料
         allGames = await api.getActiveGames();
+        // 初始狀態：顯示全部（對應首頁 TOP 4 邏輯）
         filteredGames = [...allGames];
         renderCurrentPage();
     } catch (err) {
-        console.error("Lobby Init Error:", err);
-        grid.innerHTML = `
-            <div style="grid-column: span 2; text-align: center; padding: 50px 20px;">
-                <p style="color: #ff4436; margin-bottom: 10px;">連線異常，請檢查網路</p>
-                <button onclick="location.reload()" style="background:var(--gold); border:none; padding:5px 15px; border-radius:4px;">重新整理</button>
-            </div>
-        `;
+        document.getElementById('game-grid').innerHTML = '<p style="text-align:center; padding:20px;">載入失敗</p>';
     }
 }
 
 /**
- * 更新頂部會員 UI (餘額、登入按鈕)
- */
-async function updateUserUI() {
-    const balanceBox = document.querySelector('.balance-box');
-    const loginBtn = document.querySelector('.login-btn');
-    
-    try {
-        const user = await auth.checkUser();
-        if (user) {
-            // 已登入：顯示餘額 (假設餘額存在 user_metadata 或由 api 獲取)
-            // 這裡先以固定值或 0 演示，未來可對接餘額 API
-            const balance = user.user_metadata?.balance || 0;
-            balanceBox.innerText = `NT$ ${Number(balance).toLocaleString()}`;
-            balanceBox.style.display = 'block';
-            
-            loginBtn.innerText = '退出';
-            loginBtn.style.background = 'transparent';
-            loginBtn.style.border = '1px solid var(--border)';
-            loginBtn.style.color = '#aaa';
-            loginBtn.onclick = async () => {
-                await auth.logout();
-                location.reload();
-            };
-        } else {
-            // 未登入
-            balanceBox.style.display = 'none';
-            loginBtn.innerText = '登入';
-            loginBtn.onclick = () => alert('導向登入頁面...');
-        }
-    } catch (err) {
-        balanceBox.style.display = 'none';
-    }
-}
-
-/**
- * 渲染當前頁面的遊戲卡片
+ * 渲染邏輯
  */
 function renderCurrentPage() {
     const grid = document.getElementById('game-grid');
-    const pagination = document.getElementById('pagination');
     const pageNum = document.getElementById('page-num');
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
-    
-    if (!filteredGames.length) {
-        grid.innerHTML = `
-            <div style="grid-column: span 2; text-align: center; padding: 100px 0; color: #555;">
-                <i style="font-size: 40px; display: block; margin-bottom: 10px;">🔍</i>
-                暫無相關遊戲
-            </div>
-        `;
-        pagination.style.display = 'none';
-        return;
-    }
+    const pagination = document.getElementById('pagination');
 
+    // 計算分頁
     const start = (currentPage - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
     const itemsToShow = filteredGames.slice(start, end);
 
+    // 渲染卡片
     grid.innerHTML = itemsToShow.map(game => `
-        <div class="game-card" onclick="handleGameClick('${game.game_url}')">
+        <div class="game-card" onclick="location.href='${game.game_url}'">
             <div class="game-img-wrapper">
-                <div class="game-img" style="background-image: url('./images/${game.image_path}')" 
-                     onerror="this.style.backgroundImage='url(./images/default-game.jpg)'">
-                </div>
-                <div class="game-badge">${game.category}</div>
+                <div class="game-img" style="background-image: url('./images/${game.image_path}')"></div>
             </div>
             <div class="game-info">
                 <div class="game-title">${game.name}</div>
-                <div class="game-desc">${game.description || '立即開啟贏取大獎'}</div>
+                <div class="game-desc">${game.category} | 立即開賽</div>
             </div>
         </div>
     `).join('');
 
-    // 更新分頁器
-    if (filteredGames.length > PAGE_SIZE) {
-        pagination.style.display = 'flex';
-        pageNum.innerText = currentPage;
-        prevBtn.style.opacity = currentPage === 1 ? '0.3' : '1';
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.style.opacity = end >= filteredGames.length ? '0.3' : '1';
-        nextBtn.disabled = end >= filteredGames.length;
-    } else {
-        pagination.style.display = 'none';
-    }
+    // 更新頁碼與按鈕狀態
+    pageNum.innerText = currentPage;
+    prevBtn.disabled = (currentPage === 1);
+    nextBtn.disabled = (end >= filteredGames.length);
+    
+    // 如果總數小於等於 4，隱藏分頁器
+    pagination.style.display = filteredGames.length > PAGE_SIZE ? 'flex' : 'none';
 }
-
-/**
- * 點擊遊戲處理 (檢查登入)
- */
-window.handleGameClick = (url) => {
-    auth.checkUser().then(user => {
-        if (!user) {
-            alert('請先登入會員方可開始遊戲');
-        } else {
-            location.href = url;
-        }
-    });
-};
 
 /**
  * 分頁切換
@@ -138,33 +62,25 @@ window.handleGameClick = (url) => {
 window.changePage = (step) => {
     currentPage += step;
     renderCurrentPage();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 400, behavior: 'smooth' }); // 捲動到遊戲區起點
 };
 
 /**
- * 分類過濾
+ * 分類篩選
  */
 window.filterCategory = (cat, el) => {
-    // 1. 更新 UI 樣式
-    document.querySelectorAll('.sidebar-menu li').forEach(item => item.classList.remove('active'));
-    if (el) el.classList.add('active');
-
-    // 2. 執行過濾
-    filteredGames = cat === 'all' ? allGames : allGames.filter(g => g.category === cat);
-    currentPage = 1; 
-
-    // 3. 渲染與關閉選單
-    renderCurrentPage();
-
-    if (window.toggleMenu) {
-        // 如果選單是開啟狀態才關閉
-        if (document.getElementById('sidebar').classList.contains('open')) {
-            window.toggleMenu();
-        }
-    }
+    const titleEl = document.getElementById('display-title');
     
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 更新標題內容
+    if (cat === 'all') {
+        titleEl.innerText = "熱門推薦 TOP 4";
+    } else {
+        titleEl.innerText = `${cat}系列`;
+    }
+
+    filteredGames = cat === 'all' ? allGames : allGames.filter(g => g.category === cat);
+    currentPage = 1;
+    renderCurrentPage();
 };
 
-// 監聽 DOM 載入
 document.addEventListener('DOMContentLoaded', initLobby);
